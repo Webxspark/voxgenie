@@ -1,11 +1,13 @@
+const DASH_BASE = "/dashboard"
 const ROUTES = {
     home: "/",
     setup: "/install",
     dashboard: {
-        _base: "/dashboard/app",
-        train: "/train-voice",
-        fileManager: "/voices/files",
-        history: "/history"
+        _base: DASH_BASE,
+        dashboard: DASH_BASE + "/app",
+        train: DASH_BASE + "/train-voice",
+        fileManager: DASH_BASE + "/voices/files",
+        history: DASH_BASE + "/history"
     }
 };
 
