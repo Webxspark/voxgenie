@@ -39,7 +39,6 @@ CREATE TABLE "sessions"(
 	"id"	INTEGER,
 	"session"	TEXT,
 	"tag"	TEXT,
-	"expires"	TEXT,
 	"user_agent"	TEXT,
 	"ip"	TEXT,
 	"browser"	TEXT,
