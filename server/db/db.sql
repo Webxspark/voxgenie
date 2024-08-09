@@ -35,4 +35,15 @@ CREATE TABLE "ping" (
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 
+CREATE TABLE "sessions"(
+	"id"	INTEGER,
+	"session"	TEXT,
+	"tag"	TEXT,
+	"expires"	TEXT,
+	"user_agent"	TEXT,
+	"ip"	TEXT,
+	"browser"	TEXT,
+	PRIMARY KEY("id" AUTOINCREMENT)
+);
+
 INSERT INTO ping(status) VALUES ("pong");
