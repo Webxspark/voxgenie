@@ -1,11 +1,12 @@
 import { createBrowserRouter } from "react-router-dom";
 import { ROUTES } from "../constants/routes";
 import AdminLayout from "../layouts/adminLayout";
+import LandingPage from "../pages/landing";
 
 const router = createBrowserRouter([
   {
     path: ROUTES.home,
-    element: <>Landing</>,
+    element: <LandingPage />,
   },
   {
     path: ROUTES.setup,
