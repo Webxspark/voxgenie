@@ -32,6 +32,8 @@ def ping():
   else:
     if request.form['token']:
       sessionDetails = validateToken(request.form['token'], conn, request)
+      if sessionDetails['status'] == 200:
+        session['token'] = request.form['token']
       return(jsonify(sessionDetails))
   return(jsonify(appIntgCheckRes))
 
@@ -139,7 +141,8 @@ def login():
     return(jsonify({
       "status": 200,
       "message": "Logged in successfully!",
-      "token": token
+      "token": token,
+      "tag": userTag
     }))
   return(jsonify({
     "status": 400,
@@ -164,6 +167,48 @@ def logout():
     "status": 200,
     "message": "Logged out successfully!"
   }))
+
+@app.route('/app/history', methods=['post', 'put'])
+def history():
+  if 'token' not in session:
+    return(jsonify({
+      "status": 401,
+      "message": "Unauthorized! Please login to continue."
+    }))
+  
+  conn = sqliteDriver.connect()
+  cursor = sqliteDriver.cursor(conn)
+  token = session['token']
+  sessionDetails = validateToken(token, conn, request)
+  if sessionDetails['status'] != 200:
+    return(jsonify(sessionDetails))
+  # user tag will be sent in the request (put)
+  if request.method == 'PUT':
+    userTag = request.form['tag']
+    prompt = request.form['prompt']
+    cursor.execute("SELECT * FROM users WHERE tag = ?", (userTag,))
+    user = cursor.fetchone()
+    if not user:
+      return(jsonify({
+        "status": 404,
+        "message": "User not found!"
+      }))
+    #insert into history
+    sql = "INSERT INTO history (tag, prompt) VALUES (?, ?)"
+    cursor.execute(sql, (userTag, prompt))
+    conn.commit()
+    return(jsonify({
+      "status": 200,
+      "message": "Prompt saved successfully!"
+    }))
+  
+  if request.method == "POST":
+    cursor.execute("SELECT * FROM history WHERE tag = ?", (sessionDetails['tag'],))
+    history = cursor.fetchall()
+    return(jsonify({
+      "status": 200,
+      "history": history
+    }))
 
 if(__name__ == "__main__"):
   app.run()
