@@ -1,12 +1,26 @@
 import { ROUTES } from '@/constants/routes';
 import { GlobalContext } from '@/contexts/global';
-import React, { useContext, useEffect, useRef } from 'react';
+import { vgFetch } from '@/lib/fetch';
+import { LoaderCircle } from 'lucide-react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-
+import { Sidebar, SidebarBody, SidebarLink } from "@/components/ui/sidebar";
+import {
+    IconArrowLeft,
+    IconBrandTabler,
+    IconSettings,
+    IconUserBolt,
+} from "@tabler/icons-react";
+import { Link } from 'react-router-dom';
+import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
+import DashAside from '@/components/dashboard/aside';
 const AdminLayout = () => {
-    const { user } = useContext(GlobalContext)
+    const { user, setUser } = useContext(GlobalContext)
     const isMounted = useRef(false);
     const navigate = useNavigate();
+    const [open, setOpen] = useState(false);
+    const [view, setView] = useState('loading');
     useEffect(() => {
         if (!isMounted.current) {
             isMounted.current = true
@@ -14,18 +28,47 @@ const AdminLayout = () => {
         }
     }, [])
     useEffect(() => {
-        if(isMounted.current){
+        if (isMounted.current && user) {
             checkUserLoggedIn()
         }
     }, [user])
-    function checkUserLoggedIn(){
-        if(!user){
+    function checkUserLoggedIn() {
+        if (!user) {
             navigate(ROUTES.auth)
+            return
+        }
+        setView('loading')
+        try {
+            vgFetch('/ping', { method: 'POST', body: new URLSearchParams({ token: user?.token || "-" }) }).then(res => {
+                setView('content')
+                if (res.status != 200) {
+                    setUser(null);
+                    navigate(ROUTES.auth)
+                    return;
+                }
+            })
+        } catch (err) {
+            console.error(err)
+            setView("Something went wrong while checking login status. Please try again later.")
         }
     }
     return (
-        <div>
-            <Outlet />
+        <div className='w-full'>
+            {
+                view == 'content' && <>
+                    <DashAside>
+                        <Outlet />
+                    </DashAside>
+                </>
+                || view == 'loading' && <div className='flex items-center justify-center h-[90dvh]'>
+                    <LoaderCircle className='animate-spin' />
+                </div>
+                || <div className='flex items-center justify-center h-[90dvh]'>
+                    <div className='overflow-hidden relative rounded-2xl p-10 text-base text-white bg-gradient-to-br from-purple-700 to-violet-900'>
+                        {view}
+                    </div>
+                </div>
+            }
         </div>
     );
 };

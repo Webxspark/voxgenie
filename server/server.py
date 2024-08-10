@@ -30,6 +30,8 @@ def ping():
   if appIntgCheckRes['status'] == 200:
     sessionDetails = validateToken(session['token'], conn, request)
     return(jsonify(sessionDetails))
+  elif appIntgCheckRes['status'] == 404:
+    return jsonify(appIntgCheckRes)
   else:
     if request.form['token']:
       sessionDetails = validateToken(request.form['token'], conn, request)
@@ -51,6 +53,13 @@ def installer():
 
 @app.route("/accounts/signup", methods=['post'])
 def signup():
+   # validate if session exists
+  if 'token' in session:
+    return(jsonify({
+      "status": 400,
+      "message": "Oops! You are already logged in!",
+      "action": "__redir(dashboard)"
+    }))
   conn = sqliteDriver.connect()
   cursor = sqliteDriver.cursor(conn)
   email = request.form['email']
@@ -86,7 +95,7 @@ def signup():
   conn.commit()
   return(jsonify({
     "status": 200,
-    "message": "Account created successfully! Loggin in.."
+    "message": "Account created successfully! Login to continue.",
   }))
 
 @app.route("/accounts/login", methods=['post'])
@@ -95,7 +104,8 @@ def login():
   if 'token' in session:
     return(jsonify({
       "status": 400,
-      "message": "Oops! You are already logged in!"
+      "message": "Oops! You are already logged in!",
+      "action": "__redir(dashboard)"
     }))
   
   conn = sqliteDriver.connect()

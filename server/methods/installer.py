@@ -8,7 +8,7 @@ def installApp(conn):
         conn.close()
         return {
             "status": 200,
-            "message": "App installed successfully!"
+            "message": "Thanks for accepting the EULA! VoxGenie is now installed on your machine."
         }
     except Exception as e:
         print("Error: \n", e, "\n")

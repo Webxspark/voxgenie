@@ -3,6 +3,7 @@ import { ROUTES } from "../constants/routes";
 import AdminLayout from "../layouts/adminLayout";
 import LandingPage from "../pages/landing";
 import AuthPage from "@/pages/auth";
+import DashboardLanding from "@/pages/dashboard";
 
 const router = createBrowserRouter([
   {
@@ -22,8 +23,8 @@ const router = createBrowserRouter([
     element: <AdminLayout />,
     children: [
       {
-        path: ROUTES.dashboard._base,
-        element: <>Dashboard</>
+        path: ROUTES.dashboard.dashboard,
+        element: <DashboardLanding />
       },
       {
         path: ROUTES.dashboard.fileManager,
