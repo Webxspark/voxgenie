@@ -4,11 +4,12 @@ from methods.ping import checkAppInteg, validateToken
 from methods.installer import installApp
 from flask_bcrypt import Bcrypt
 from flask_session import Session
+from flask_cors import CORS
 import random
 import datetime
 
 app = Flask(__name__)
-
+CORS(app)
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_USE_SIGNER'] = True

@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router-dom";
 import { ROUTES } from "../constants/routes";
 import AdminLayout from "../layouts/adminLayout";
 import LandingPage from "../pages/landing";
+import AuthPage from "@/pages/auth";
 
 const router = createBrowserRouter([
   {
@@ -11,6 +12,10 @@ const router = createBrowserRouter([
   {
     path: ROUTES.setup,
     element: <>Setup</>,
+  },
+  {
+    path: `${ROUTES.auth}/:view?`,
+    element: <AuthPage />,
   },
   {
     path: ROUTES.dashboard._base,
