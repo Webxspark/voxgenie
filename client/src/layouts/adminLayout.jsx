@@ -28,8 +28,8 @@ const AdminLayout = () => {
         }
     }, [])
     useEffect(() => {
-        if (isMounted.current && user) {
-            checkUserLoggedIn()
+        if (isMounted.current) {
+            checkUserLoggedIn();
         }
     }, [user])
     function checkUserLoggedIn() {
@@ -38,19 +38,17 @@ const AdminLayout = () => {
             return
         }
         setView('loading')
-        try {
-            vgFetch('/ping', { method: 'POST', body: new URLSearchParams({ token: user?.token || "-" }) }).then(res => {
-                setView('content')
-                if (res.status != 200) {
-                    setUser(null);
-                    navigate(ROUTES.auth)
-                    return;
-                }
-            })
-        } catch (err) {
+        vgFetch('/ping', { method: 'POST', body: new URLSearchParams({ token: user?.token || "-" }) }).then(res => {
+            setView('content')
+            if (res.status != 200) {
+                setUser(null);
+                navigate(ROUTES.auth)
+                return;
+            }
+        }).catch(err => {
             console.error(err)
             setView("Something went wrong while checking login status. Please try again later.")
-        }
+        })
     }
     return (
         <div className='w-full'>

@@ -1,45 +1,60 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
     IconArrowLeft,
     IconBrandTabler,
     IconSettings,
     IconUserBolt,
+    IconLogout,
+    IconHistory,
+    IconServer,
+    IconHome
 } from "@tabler/icons-react";
 import { cn } from '@/lib/utils';
 import { Sidebar, SidebarBody, SidebarLink } from '../ui/sidebar';
 import { Link } from 'react-router-dom';
 import { motion } from "framer-motion";
 import { ROUTES } from '@/constants/routes';
-const DashAside = ({children}) => {
+import userProfile from "@/assets/webp/user-m.webp";
+import { GlobalContext } from '@/contexts/global';
+const DashAside = ({ children }) => {
     const [open, setOpen] = useState(false);
+    const { user, logout } = useContext(GlobalContext);
     const links = [
         {
             label: "Dashboard",
-            href: "#",
+            href: ROUTES.dashboard.dashboard,
+            icon: (
+                <IconHome className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+            ),
+        },
+        {
+            label: "Train Voice",
+            href: ROUTES.dashboard.train,
             icon: (
                 <IconBrandTabler className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
             ),
         },
         {
-            label: "Profile",
-            href: "#",
+            label: "File Manager",
+            href: ROUTES.dashboard.fileManager,
             icon: (
-                <IconUserBolt className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+                <IconServer className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
             ),
         },
         {
-            label: "Settings",
-            href: "#",
+            label: "History",
+            href: ROUTES.dashboard.history,
             icon: (
-                <IconSettings className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+                <IconHistory className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
             ),
         },
         {
             label: "Logout",
             href: "#",
             icon: (
-                <IconArrowLeft className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
+                <IconLogout className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
             ),
+            onClick: () => { logout.init(true) }
         },
     ];
     return (
@@ -55,18 +70,18 @@ const DashAside = ({children}) => {
                         {open ? <Logo /> : <LogoIcon />}
                         <div className="mt-8 flex flex-col gap-2">
                             {links.map((link, idx) => (
-                                <SidebarLink key={idx} link={link} />
+                                <SidebarLink onClick={link.onClick} key={idx} link={link} />
                             ))}
                         </div>
                     </div>
                     <div>
                         <SidebarLink
                             link={{
-                                label: "Manu Arora",
+                                label: <div className='capitalize'>{user?.username}</div>,
                                 href: "#",
                                 icon: (
                                     <img
-                                        src="https://assets.aceternity.com/manu.png"
+                                        src={userProfile}
                                         className="h-7 w-7 flex-shrink-0 rounded-full"
                                         width={50}
                                         height={50}

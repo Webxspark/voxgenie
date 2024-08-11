@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, session
+from flask import Flask, request, jsonify, session, make_response
 from drivers import Sqlite3Driver
 from methods.ping import checkAppInteg, validateToken
 from methods.installer import installApp
@@ -11,16 +11,20 @@ import datetime
 app = Flask(__name__)
 CORS(app)
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
-app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_PERMANENT'] = True
 app.config['SESSION_FILE_DIR'] = './.flask_session/'
-app.secret_key = "WXP_FS_voxGenie2024"
+app.config["SESSION_COOKIE_SAMESITE"] = "None"
+app.config["SESSION_COOKIE_SECURE"] = True
+# app.secret_key = "WXP_FS_voxGenie2024"
+app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
 
 Session(app)
 sqliteDriver = Sqlite3Driver("./db/app.voice.genie")
 
 @app.route("/", methods=['get', 'post'])
 def index():
+  resp = make_response("set-cookie")
+  resp.set_cookie('test', 'Hlo')
   return jsonify("Hello world!")
 
 @app.route("/ping", methods=['post'])
@@ -152,8 +156,12 @@ def login():
     return(jsonify({
       "status": 200,
       "message": "Logged in successfully!",
-      "token": token,
-      "tag": userTag
+      "data": {
+        "token": token,
+        "tag": userTag,
+        "email": email,
+        "username": user[1]
+      }
     }))
   return(jsonify({
     "status": 400,
