@@ -1,4 +1,4 @@
-const API = "http://localhost:5000"
+const API = "/genie"
 async function vgFetch(route, options) {
     return fetch(`${API}${route}`, options)
       .then((res) => {

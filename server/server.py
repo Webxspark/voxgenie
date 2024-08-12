@@ -21,13 +21,13 @@ app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
 Session(app)
 sqliteDriver = Sqlite3Driver("./db/app.voice.genie")
 
-@app.route("/", methods=['get', 'post'])
+@app.route("/genie", methods=['get', 'post'])
 def index():
   resp = make_response("set-cookie")
   resp.set_cookie('test', 'Hlo')
   return jsonify("Hello world!")
 
-@app.route("/ping", methods=['post'])
+@app.route("/genie/ping", methods=['post'])
 def ping():
   conn = sqliteDriver.connect()
   appIntgCheckRes = checkAppInteg(conn, session)
@@ -44,7 +44,7 @@ def ping():
       return(jsonify(sessionDetails))
   return(jsonify(appIntgCheckRes))
 
-@app.route("/eula-accept", methods=['post'])
+@app.route("/genie/eula-accept", methods=['post'])
 def installer():
   conn = sqliteDriver.connect()
   installationCheck = checkAppInteg(conn, session)
@@ -55,7 +55,7 @@ def installer():
     }))
   return(jsonify(installApp(conn)))
 
-@app.route("/accounts/signup", methods=['post'])
+@app.route("/genie/accounts/signup", methods=['post'])
 def signup():
    # validate if session exists
   if 'token' in session:
@@ -102,7 +102,7 @@ def signup():
     "message": "Account created successfully! Login to continue.",
   }))
 
-@app.route("/accounts/login", methods=['post'])
+@app.route("/genie/accounts/login", methods=['post'])
 def login():
   # validate if session exists
   if 'token' in session:
@@ -168,7 +168,7 @@ def login():
     "message": "Invalid password! Please provide the correct password."
   }))
 
-@app.route("/accounts/logout", methods=['post'])
+@app.route("/genie/accounts/logout", methods=['post'])
 def logout():
   # validate if session exists
   if 'token' not in session:
@@ -187,7 +187,7 @@ def logout():
     "message": "Logged out successfully!"
   }))
 
-@app.route('/app/history', methods=['post', 'put'])
+@app.route('/genie/app/history', methods=['post', 'put'])
 def history():
   if 'token' not in session:
     return(jsonify({

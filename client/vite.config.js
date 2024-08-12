@@ -9,10 +9,11 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  proxy: {
-    '/api': {
-      target: 'http://localhost:5000',
-    }
-  }
+  server: {
+    proxy: {
+      '/genie': 'http://localhost:5000',
+    },
+    port: 3000
+  },
 
 })
