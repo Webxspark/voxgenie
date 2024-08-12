@@ -229,5 +229,38 @@ def history():
       "history": history
     }))
 
+@app.route("/genie/app/voice", methods=['post'])
+def voiceInference():
+  if 'token' not in session:
+    return(jsonify({
+      "status": 401,
+      "message": "Unauthorized! Please login to continue."
+    }))
+    
+  conn = sqliteDriver.connect()
+  cursor = sqliteDriver.cursor(conn)
+  token = session['token']
+  sessionDetails = validateToken(token, conn, request)
+  if sessionDetails['status'] != 200:
+    return(jsonify(sessionDetails))
+  
+  userTag = sessionDetails['tag']
+  prompt = request.form['prompt']
+  speaker = False
+  voice = False
+  if "speaker" in request.form:
+    speaker = request.form['speaker']
+  if "voice" in request.form:
+    voice = request.form['voice']
+
+  if speaker != False:
+    supportedSpeakers = ['Ana Florence']
+    if speaker not in supportedSpeakers:
+      return(jsonify({
+        "status": 400,
+        "message": "There is no speaker with this name. Please provide a valid speaker name."
+      }))
+    
+
 if(__name__ == "__main__"):
   app.run()
