@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react';
+import React, { lazy, Suspense, useContext, useState } from 'react';
 import {
     IconArrowLeft,
     IconBrandTabler,
@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { ROUTES } from '@/constants/routes';
 import userProfile from "@/assets/webp/user-m.webp";
 import { GlobalContext } from '@/contexts/global';
+const AudioPlayerWidget = lazy(() => import('./audio-player'));
 const DashAside = ({ children }) => {
     const [open, setOpen] = useState(false);
     const { user, logout } = useContext(GlobalContext);
@@ -95,6 +96,11 @@ const DashAside = ({ children }) => {
             </Sidebar>
             <div className='m-3'>
                 {children}
+                <Suspense fallback={<></>}>
+                    <div className=''>
+                        <AudioPlayerWidget />
+                    </div>
+                </Suspense>
             </div>
         </div>
     );

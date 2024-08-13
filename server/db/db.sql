@@ -19,6 +19,7 @@ CREATE TABLE "history" (
 	"id"	INTEGER,
 	"tag"	TEXT,
 	"prompt"	TEXT,
+	"output"	TEXT,
 	PRIMARY KEY("id" AUTOINCREMENT)
 );
 

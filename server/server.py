@@ -1,12 +1,15 @@
-from flask import Flask, request, jsonify, session, make_response
+import os
+import random
+import datetime
+from flask import Flask, request, jsonify, session, Response
 from drivers import Sqlite3Driver
 from methods.ping import checkAppInteg, validateToken
 from methods.installer import installApp
 from flask_bcrypt import Bcrypt
 from flask_session import Session
 from flask_cors import CORS
-import random
-import datetime
+from methods.functions import *
+from TTS.api import TTS
 
 app = Flask(__name__)
 CORS(app)
@@ -15,7 +18,7 @@ app.config['SESSION_PERMANENT'] = True
 app.config['SESSION_FILE_DIR'] = './.flask_session/'
 app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["SESSION_COOKIE_SECURE"] = True
-# app.secret_key = "WXP_FS_voxGenie2024"
+app.secret_key = "WXP_FS_voxGenie2024"
 app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
 
 Session(app)
@@ -23,8 +26,6 @@ sqliteDriver = Sqlite3Driver("./db/app.voice.genie")
 
 @app.route("/genie", methods=['get', 'post'])
 def index():
-  resp = make_response("set-cookie")
-  resp.set_cookie('test', 'Hlo')
   return jsonify("Hello world!")
 
 @app.route("/genie/ping", methods=['post'])
@@ -153,6 +154,7 @@ def login():
     conn.commit()
     conn.close()
     session['token'] = token
+    session['tag'] = userTag
     return(jsonify({
       "status": 200,
       "message": "Logged in successfully!",
@@ -229,22 +231,14 @@ def history():
       "history": history
     }))
 
-@app.route("/genie/app/voice", methods=['post'])
+@app.route("/genie/app/voice", methods=['get', 'post'])
 def voiceInference():
-  if 'token' not in session:
+  functions = VoxGenie(sqliteDriver.connect(), session)
+  if functions.validateSession(session, request)['status'] != 200:
     return(jsonify({
       "status": 401,
       "message": "Unauthorized! Please login to continue."
     }))
-    
-  conn = sqliteDriver.connect()
-  cursor = sqliteDriver.cursor(conn)
-  token = session['token']
-  sessionDetails = validateToken(token, conn, request)
-  if sessionDetails['status'] != 200:
-    return(jsonify(sessionDetails))
-  
-  userTag = sessionDetails['tag']
   prompt = request.form['prompt']
   speaker = False
   voice = False
@@ -260,7 +254,53 @@ def voiceInference():
         "status": 400,
         "message": "There is no speaker with this name. Please provide a valid speaker name."
       }))
-    
+  if voice != False:
+    pass # to be implemented (check if voice id exists)
+
+  tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2", gpu=True)
+  if speaker != False:
+    # check if output directory exists
+    if not os.path.exists("./output/"):
+      os.makedirs("./output/")
+    outputFileName = str(random.randint(1000000000, 9999999999)) + ".wav"
+    output = "./output/" + outputFileName
+    print("\n\nGenerating voice...")
+    try:
+      tts.tts_to_file(
+        text=prompt,
+        file_path=output,
+        speaker=speaker,
+        language="en",
+        split_sentences=True
+      )
+      print("Voice generated successfully!")
+      functions.History_add(prompt, outputFileName, speaker, voice, request)
+      def generate():
+        print("Streaming voice...")
+        with open(output, 'rb') as fwav:
+          data = fwav.read(1024)
+          while data:
+            yield data
+            data = fwav.read(1024)
+        print("Voice stream completed!")
+        # os.remove(output)
+      return Response(generate(), mimetype="audio/wav")
+    except Exception as e: 
+        print(e)
+        return(jsonify({
+          "status": 400,
+          "message": "An error occurred while generating the voice!"
+        }))
+
+@app.route("/genie/speakers/audio/sample", methods=['get'])
+def anaFlorence():
+  def stream():
+    with open("./samples/output.wav", 'rb') as fwav:
+      data = fwav.read(1024)
+      while data:
+        yield data
+        data = fwav.read(1024)
+  return Response(stream(), mimetype="audio/wav")
 
 if(__name__ == "__main__"):
-  app.run()
+  app.run(debug=True)
