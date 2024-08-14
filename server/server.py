@@ -1,7 +1,7 @@
 import os
 import random
 import datetime
-from flask import Flask, request, jsonify, session, Response
+from flask import Flask, request, jsonify, session, Response, send_from_directory
 from drivers import Sqlite3Driver
 from methods.ping import checkAppInteg, validateToken
 from methods.installer import installApp
@@ -275,16 +275,17 @@ def voiceInference():
       )
       print("Voice generated successfully!")
       functions.History_add(prompt, outputFileName, speaker, voice, request)
-      def generate():
-        print("Streaming voice...")
-        with open(output, 'rb') as fwav:
-          data = fwav.read(1024)
-          while data:
-            yield data
-            data = fwav.read(1024)
-        print("Voice stream completed!")
-        # os.remove(output)
-      return Response(generate(), mimetype="audio/wav")
+      
+      return {
+        "status": 200,
+        "message": "Voice generation completed!",
+        "data": {
+          "prompt": prompt,
+          "speaker": speaker,
+          "voice": voice,
+          "output": outputFileName
+        }
+      }
     except Exception as e: 
         print(e)
         return(jsonify({
@@ -301,6 +302,17 @@ def anaFlorence():
         yield data
         data = fwav.read(1024)
   return Response(stream(), mimetype="audio/wav")
+
+@app.route("/genie/outputs/<path:filename>", methods=['get'])
+def download(filename):
+  print(filename)
+  # check if file exists in the output directory
+  if not os.path.exists("./output/" + filename):
+    return(jsonify({
+      "status": 404,
+      "message": "File not found!"
+    }))
+  return send_from_directory("./output/", filename, as_attachment=True)
 
 if(__name__ == "__main__"):
   app.run(debug=True)
