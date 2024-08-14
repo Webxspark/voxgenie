@@ -37,7 +37,6 @@ const AudioPlayerWidget = () => {
                             src="http://example.com/audio.mp3"
                             onPlay={e => console.log("onPlay")}
                             className='rounded-t-3xl'
-                        // other props here
                         />
                     </div>
                 </motion.div>
