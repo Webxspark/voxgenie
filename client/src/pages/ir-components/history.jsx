@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AppContext } from '@/contexts/dashboard';
+import { GlobalContext } from '@/contexts/global';
 import { vgFetch } from '@/lib/fetch';
 import { cn } from '@/lib/utils';
 import { DownloadIcon, PlayIcon, TrashIcon } from '@radix-ui/react-icons';
@@ -13,6 +14,7 @@ const History = ({ dashboard = false }) => {
     const isMounted = useRef(false);
     const [view, setView] = useState("loading");
     const [historyData, setHistoryData] = useState([]);
+    const { utils } = useContext(GlobalContext)
     const { audio_player, nonces } = useContext(AppContext);
     const [overViewPopupVisible, setOverViewPopupVisible] = useState(false);
     const processingRef = useRef(false);
@@ -33,6 +35,43 @@ const History = ({ dashboard = false }) => {
             nonces.api.setHistory("")
         }
     }, [nonces.history])
+    const handleHistoryDeletion = (audio) => {
+        if (processingRef.current) return;
+        if (window.confirm("Are you sure you want to delete this history?")) {
+            setOverViewPopupVisible(false)
+            processingRef.current = true
+            utils.toast.promise(__intCall(), {
+                loading: "Deleting history...",
+                success: (resp) => {
+                    nonces.api.setHistory(Date.now());
+                    return resp.message;
+                },
+                error: (err) => {
+                    console.error(err);
+                    return err.message || 'Something went wrong while deleting history. Please try again later. [D-500]';
+                }
+            })
+            function __intCall(){
+                return new Promise((resolve, reject) => {
+                    vgFetch("/app/history/remove", {
+                        method: "DELETE",
+                        body: new URLSearchParams({ audio: audio })
+                    }).then(resp => {
+                        processingRef.current = false
+                        if (resp.status == 200) {
+                            resolve(resp)
+                        } else {
+                            reject(resp)
+                        }
+                    }).catch(err => {
+                        processingRef.current = false
+                        console.error(err)
+                        reject({ message: 'Something went wrong while deleting history. Please try again later. [D-500]' })
+                    })
+                })
+            }
+        }
+    }
     const fetchHisoryData = () => {
         setView("loading")
         vgFetch("/app/history", {
@@ -161,13 +200,13 @@ const History = ({ dashboard = false }) => {
                                     <PlayIcon />
                                 </Button>
                             </WxpToolTip>
-                            <WxpToolTip title={"Download audio"} asChild sparkVariant={true} >
+                            <WxpToolTip title={"Download audio"} asChild sparkVariant={true} side='bottom' >
                                 <a href={`/genie/outputs/${overViewData.audio}`} download={`generated-speech-${Date.now()}.mp3`} className={cn(buttonVariants({ size: "icon" }), "rounded-full cursor-pointer")} >
                                     <DownloadIcon />
                                 </a>
                             </WxpToolTip>
                             <WxpToolTip title={"Delete from history"} sparkVariant side='bottom'>
-                                <Button size="icon" className="rounded-full">
+                                <Button onClick={e => handleHistoryDeletion(overViewData.audio)} size="icon" className="rounded-full">
                                     <TrashIcon />
                                 </Button>
                             </WxpToolTip>

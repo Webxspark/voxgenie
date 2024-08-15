@@ -237,6 +237,11 @@ def history():
       "status": 200,
       "history": history
     }))
+@app.route("/genie/app/history/remove", methods=['delete'])
+def removeHistory():
+  functions = VoxGenie(sqliteDriver.connect(), session)
+  audio = request.form['audio']
+  return jsonify(functions.History_remove(audio, request))
 
 @app.route("/genie/app/voice", methods=['get', 'post'])
 def voiceInference():
