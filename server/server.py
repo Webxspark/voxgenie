@@ -10,6 +10,9 @@ from flask_session import Session
 from flask_cors import CORS
 from methods.functions import *
 from TTS.api import TTS
+import multiprocessing
+from gunicorn.app.base import BaseApplication
+import torch
 
 app = Flask(__name__)
 CORS(app)
@@ -23,7 +26,7 @@ app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
 
 Session(app)
 sqliteDriver = Sqlite3Driver("./db/app.voice.genie")
-
+tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2", gpu=True)
 @app.route("/genie", methods=['get', 'post'])
 def index():
   return jsonify("Hello world!")
@@ -224,7 +227,11 @@ def history():
     }))
   
   if request.method == "POST":
-    cursor.execute("SELECT * FROM history WHERE tag = ?", (sessionDetails['tag'],))
+    if "limit" in request.form:
+      limit = int(request.form['limit'])
+      cursor.execute("SELECT * FROM history WHERE tag = ? ORDER BY id DESC LIMIT ?", (session['tag'], limit))
+    else:
+      cursor.execute("SELECT * FROM history WHERE tag = ? ORDER BY id DESC", (session['tag'],))
     history = cursor.fetchall()
     return(jsonify({
       "status": 200,
@@ -257,7 +264,6 @@ def voiceInference():
   if voice != False:
     pass # to be implemented (check if voice id exists)
 
-  tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2", gpu=True)
   if speaker != False:
     # check if output directory exists
     if not os.path.exists("./output/"):
@@ -275,7 +281,7 @@ def voiceInference():
       )
       print("Voice generated successfully!")
       functions.History_add(prompt, outputFileName, speaker, voice, request)
-      
+      torch.cuda.empty_cache()
       return {
         "status": 200,
         "message": "Voice generation completed!",
@@ -305,7 +311,6 @@ def anaFlorence():
 
 @app.route("/genie/outputs/<path:filename>", methods=['get'])
 def download(filename):
-  print(filename)
   # check if file exists in the output directory
   if not os.path.exists("./output/" + filename):
     return(jsonify({
@@ -314,5 +319,30 @@ def download(filename):
     }))
   return send_from_directory("./output/", filename, as_attachment=True)
 
+
+class StandaloneApplication(BaseApplication):
+    def __init__(self, app, options=None):
+        self.options = options or {}
+        self.application = app
+        super().__init__()
+
+    def load_config(self):
+        config = {key: value for key, value in self.options.items()
+                  if key in self.cfg.settings and value is not None}
+        for key, value in config.items():
+            self.cfg.set(key.lower(), value)
+
+    def load(self):
+        return self.application
+
+def run_gunicorn():
+    options = {
+        'bind': '0.0.0.0:8000',
+        'workers': 4,
+    }
+    StandaloneApplication(app, options).run()
+
+
 if(__name__ == "__main__"):
-  app.run(debug=True)
+  app.run(debug=False)
+  # run_gunicorn()

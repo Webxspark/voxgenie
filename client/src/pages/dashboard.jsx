@@ -12,10 +12,11 @@ import { DownloadIcon, PlayIcon } from '@radix-ui/react-icons';
 import { Loader } from 'lucide-react';
 import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
+import History from './ir-components/history';
 
 const DashboardLanding = () => {
     const { utils } = useContext(GlobalContext);
-    const { audio_player } = useContext(AppContext);
+    const { audio_player, tasks, nonces } = useContext(AppContext);
     const [text, setText] = useState('');
     const [btnLoading, setBtnLoading] = useState(false);
     const [outputAudio, setOutputAudio] = useState('');
@@ -43,6 +44,7 @@ const DashboardLanding = () => {
         if (decodedJSON.voice) {
             reqData.voice = decodedJSON.voice;
         }
+        // tasks.api.processes.add(reqData);
         vgFetch("/app/voice", {
             method: "POST",
             body: new URLSearchParams(reqData)
@@ -51,6 +53,11 @@ const DashboardLanding = () => {
             if (resp.status == 200) {
                 utils.toast.success(resp.message);
                 setOutputAudio(resp.data?.output || '');
+                // setHistoryNonce(Date.now());
+                nonces.api.setHistory(Date.now());
+            } else {
+                console.error(resp);
+                utils.toast.error(resp.message || 'Something went wrong while synthesizing text to speech. Please try again later. [D-500]');
             }
         }).catch(err => {
             setBtnLoading(false);
@@ -68,7 +75,7 @@ const DashboardLanding = () => {
         audio_player.api.play();
     }
     return (
-        <div className='grid grid-cols-12 gap-4'>
+        <div className='grid grid-cols-12 gap-4 items-start'>
             <Card className="md:col-span-7 col-span-12">
                 <CardHeader>
                     <CardTitle>
@@ -88,16 +95,16 @@ const DashboardLanding = () => {
                                 <Textarea
                                     placeholder="Type or paste text here"
                                     rows="8"
-                                    maxLength="5000"
+                                    maxLength="1000"
                                     value={text}
                                     onChange={(e) => {
-                                        if (e.target.value.length > 5000) return;
-                                        setText(e.target.value.slice(0, 5000));
+                                        if (e.target.value.length > 1000) return;
+                                        setText(e.target.value.slice(0, 1000));
                                     }}
                                 />
                                 <div className='flex justify-end mt-2'>
-                                    <p className={cn('text-muted-foreground text-sm', text.length >= 5000 && "text-red-500 font-bold")}>
-                                        {text.length}/5000 characters
+                                    <p className={cn('text-muted-foreground text-sm', text.length >= 1000 && "text-red-500 font-bold")}>
+                                        {text.length}/1000 characters
                                     </p>
                                 </div>
                             </div>
@@ -162,7 +169,7 @@ const DashboardLanding = () => {
                 </CardContent>
             </Card>
             <div className='md:col-span-5 col-span-12'>
-                @TODO: History section
+                <History dashboard />
             </div>
         </div>
     );

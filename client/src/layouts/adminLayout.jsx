@@ -6,6 +6,7 @@ import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import DashAside from '@/components/dashboard/aside';
 import { AppContextProvider } from '@/contexts/dashboard';
+import AppTasks from '@/components/dashboard/tasks';
 const AdminLayout = () => {
     const { user, setUser } = useContext(GlobalContext)
     const isMounted = useRef(false);
@@ -48,6 +49,7 @@ const AdminLayout = () => {
                     view == 'content' && <>
                         <DashAside>
                             <Outlet />
+                            <AppTasks />
                         </DashAside>
                     </>
                     || view == 'loading' && <div className='flex items-center justify-center h-[90dvh]'>

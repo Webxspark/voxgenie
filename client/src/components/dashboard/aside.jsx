@@ -94,7 +94,7 @@ const DashAside = ({ children }) => {
                     </div>
                 </SidebarBody>
             </Sidebar>
-            <div className='m-3 md:w-full'>
+            <div className='m-3 overflow-y-auto md:w-full'>
                 {children}
                 <Suspense fallback={<></>}>
                     <div className=''>

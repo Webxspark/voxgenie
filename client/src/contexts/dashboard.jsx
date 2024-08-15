@@ -8,6 +8,12 @@ const AppContextProvider = ({ children }) => {
     const [audioPlayerVoice, setAudioPlayerVoice] = useState('');
     const [audioPlayerUrl, setAudioPlayerUrl] = useState('');
     const [audioPlayerShow, setAudioPlayerShow] = useState(false);
+    /**-------------------------------------------**/
+    const [tasksProcesses, setTasksProcesses] = useState([]);
+    const [tasksOnGoing, setTasksOnGoing] = useState([]);
+    /**-------------------------------------------**/
+    const [historyNonce, setHistoryNonce] = useState('');
+
     const api = {
         audio_player: {
             state: audioPlayerState,
@@ -39,6 +45,34 @@ const AppContextProvider = ({ children }) => {
                 hide: () => {
                     setAudioPlayerShow(false);
                 }
+            }
+        },
+        tasks: {
+            processes: tasksProcesses,
+            onGoing: tasksOnGoing,
+            api: {
+                processes: {
+                    add: (process) => {
+                        setTasksProcesses([...tasksProcesses, process]);
+                    },
+                    clear: () => {
+                        setTasksProcesses([]);
+                    }
+                },
+                onGoing: {
+                    add: (process) => {
+                        setTasksOnGoing([...tasksOnGoing, process]);
+                    },
+                    clear: () => {
+                        setTasksOnGoing([]);
+                    }
+                }
+            }
+        },
+        nonces: {
+            history: historyNonce,
+            api: {
+                setHistory: setHistoryNonce
             }
         }
     }

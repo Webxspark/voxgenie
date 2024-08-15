@@ -4,6 +4,7 @@ import AdminLayout from "../layouts/adminLayout";
 import LandingPage from "../pages/landing";
 import AuthPage from "@/pages/auth";
 import DashboardLanding from "@/pages/dashboard";
+import History from "@/pages/ir-components/history";
 
 const router = createBrowserRouter([
   {
@@ -36,7 +37,7 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.dashboard.history,
-        element: <>History</>
+        element: <History />
       },
     ]
   }
