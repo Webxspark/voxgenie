@@ -5,6 +5,7 @@ import LandingPage from "../pages/landing";
 import AuthPage from "@/pages/auth";
 import DashboardLanding from "@/pages/dashboard";
 import History from "@/pages/ir-components/history";
+import SpeechTraining from "@/pages/train";
 
 const router = createBrowserRouter([
   {
@@ -33,7 +34,7 @@ const router = createBrowserRouter([
       },
       {
         path: ROUTES.dashboard.train,
-        element: <>Train</>
+        element: <SpeechTraining />
       },
       {
         path: ROUTES.dashboard.history,
