@@ -1,8 +1,10 @@
 import { cn } from "@/lib/utils";
-import React, { useRef, useState } from "react";
+import React, { useContext, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { IconUpload } from "@tabler/icons-react";
 import { useDropzone } from "react-dropzone";
+import { Trash } from "lucide-react";
+import { GlobalContext } from "@/contexts/global";
 
 const mainVariant = {
   initial: {
@@ -26,10 +28,12 @@ const secondaryVariant = {
 };
 
 export const FileUpload = ({
-  onChange
+  onChange,
+
 }) => {
   const [files, setFiles] = useState([]);
   const fileInputRef = useRef(null);
+  const { utils } = useContext(GlobalContext);
 
   const handleFileChange = (newFiles) => {
     setFiles((prevFiles) => [...prevFiles, ...newFiles]);
@@ -40,8 +44,9 @@ export const FileUpload = ({
     fileInputRef.current?.click();
   };
 
+
   const { getRootProps, isDragActive } = useDropzone({
-    multiple: false,
+    multiple: true,
     noClick: true,
     onDrop: handleFileChange,
     onDropRejected: (error) => {
@@ -96,8 +101,26 @@ export const FileUpload = ({
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       layout
-                      className="rounded-lg px-2 py-1 w-fit flex-shrink-0 text-sm text-neutral-600 dark:bg-neutral-800 dark:text-white shadow-input">
-                      {(file.size / (1024 * 1024)).toFixed(2)} MB
+                      className="flex gap-x-2 items-center">
+                      <span className="rounded-lg px-2 py-1 w-fit flex-shrink-0 text-sm text-neutral-600 dark:bg-neutral-800 dark:text-white shadow-input">
+                        {(file.size / (1024 * 1024)).toFixed(3)} MB
+                      </span>
+                      <div>
+                        <motion.button
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          layout
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (window.confirm("Remove selected file and upload another one?")) {
+                              setFiles((prevFiles) => prevFiles.filter((_, i) => i !== idx));
+                            }
+                          }}
+                          className="text-neutral-600 dark:text-neutral-400">
+                          <Trash className="h-4 w-4" />
+                        </motion.button>
+                      </div>
                     </motion.p>
                   </div>
 
@@ -169,11 +192,10 @@ export function GridPattern() {
           return (
             (<div
               key={`${col}-${row}`}
-              className={`w-10 h-10 flex flex-shrink-0 rounded-[2px] ${
-                index % 2 === 0
-                  ? "bg-gray-50 dark:bg-neutral-950"
-                  : "bg-gray-50 dark:bg-neutral-950 shadow-[0px_0px_1px_3px_rgba(255,255,255,1)_inset] dark:shadow-[0px_0px_1px_3px_rgba(0,0,0,1)_inset]"
-              }`} />)
+              className={`w-10 h-10 flex flex-shrink-0 rounded-[2px] ${index % 2 === 0
+                ? "bg-gray-50 dark:bg-neutral-950"
+                : "bg-gray-50 dark:bg-neutral-950 shadow-[0px_0px_1px_3px_rgba(255,255,255,1)_inset] dark:shadow-[0px_0px_1px_3px_rgba(0,0,0,1)_inset]"
+                }`} />)
           );
         }))}
     </div>)
