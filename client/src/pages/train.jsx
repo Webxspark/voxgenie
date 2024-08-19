@@ -6,16 +6,33 @@ import { FileUpload } from '@/components/ui/file-upload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { GlobalContext } from '@/contexts/global';
 import { PlusIcon } from '@radix-ui/react-icons';
 import { Edit, Trash } from 'lucide-react';
-import React, { useRef, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 
 const SpeechTraining = () => {
     const [showModal, setShowModal] = useState(false);
     const processingRef = useRef(false);
+    const voiceLabelRef = useRef(null);
+    const [uploadedFiles, setUploadedFiles] = useState([]);
+    const { utils } = useContext(GlobalContext);
     const handleFormSubmit = async (e) => {
         e.preventDefault();
+        //validate form
+        if (voiceLabelRef.current.value === '') {
+            utils.toast.error('Voice name is required');
+            return;
+        }
+        if(uploadedFiles.length === 0){
+            utils.toast.error('Please upload at least one voice sample');
+            return;
+        }
+
     };
+    const handleFileUpload = e => {
+        setUploadedFiles(e);
+    }
     return (
         <div>
             <Card>
@@ -84,6 +101,7 @@ const SpeechTraining = () => {
                             <Input
                                 type='text'
                                 placeholder='Eg: John Doe'
+                                ref={voiceLabelRef}
                             />
                         </div>
                         <div>
@@ -91,7 +109,7 @@ const SpeechTraining = () => {
                                 Add Files <small>(MAX 10MB/file)</small>
                             </Label>
                             <ScrollArea className="max-h-[400px] overflow-y-auto">
-                                <FileUpload />
+                                <FileUpload onChange={handleFileUpload} />
                             </ScrollArea>
                         </div>
                         <DialogFooter>

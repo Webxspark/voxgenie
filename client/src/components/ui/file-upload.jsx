@@ -36,8 +36,22 @@ export const FileUpload = ({
   const { utils } = useContext(GlobalContext);
 
   const handleFileChange = (newFiles) => {
+    var insert = true;
+    newFiles.length > 0 && newFiles.map(file => {
+      if (!file.type.includes('audio')) {
+        insert = false;
+        utils.toast.error('Please upload only audio files!');
+        return false;
+      }
+    })
+    // check if file is already added in the files state
+    newFiles = newFiles.filter(file => {
+      return !files.some(f => f.name === file.name);
+    });
+
+    if (insert === false) return;
     setFiles((prevFiles) => [...prevFiles, ...newFiles]);
-    onChange && onChange(newFiles);
+    onChange && onChange([...files, ...newFiles]);
   };
 
   const handleClick = () => {
@@ -64,6 +78,7 @@ export const FileUpload = ({
           ref={fileInputRef}
           id="file-upload-handle"
           type="file"
+          multiple
           onChange={(e) => handleFileChange(Array.from(e.target.files || []))}
           className="hidden" />
         <div
@@ -115,6 +130,7 @@ export const FileUpload = ({
                             e.stopPropagation();
                             if (window.confirm("Remove selected file and upload another one?")) {
                               setFiles((prevFiles) => prevFiles.filter((_, i) => i !== idx));
+                              onChange && onChange(files.filter((_, i) => i !== idx));
                             }
                           }}
                           className="text-neutral-600 dark:text-neutral-400">
