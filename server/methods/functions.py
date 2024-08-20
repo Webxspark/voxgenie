@@ -116,3 +116,32 @@ class VoxGenie:
             "history": history
         }
     
+    # voice functions (add, remove, get)
+    def Voice_add(self, label: str, files: list):
+        cursor = self.conn.cursor()
+        tag = self.session['tag']
+        cursor.execute("INSERT INTO voices(tag, files, label) VALUES (?, ?, ?)", (tag, json.dumps(files), label))
+        self.conn.commit()
+        return {
+            "status": 200,
+            "message": "Voice trained successfully! You can now use it to generate prompts."
+        }
+    def Voice_remove(self, id: any):
+        cursor = self.conn.cursor()
+        tag = self.session['tag']
+        cursor.execute("DELETE FROM voices WHERE id = ? AND tag = ?", (id, tag))
+        self.conn.commit()
+        return {
+            "status": 200,
+            "message": "Voice removed successfully!"
+        }
+    def Voice_get(self):
+        cursor = self.conn.cursor()
+        tag = self.session['tag']
+        cursor.execute("SELECT * FROM voices WHERE tag = ?", (tag,))
+        voices = cursor.fetchall()
+        return {
+            "status": 200,
+            "voices": voices
+        }
+    

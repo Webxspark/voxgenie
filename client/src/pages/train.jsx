@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { GlobalContext } from '@/contexts/global';
+import { vgFetch } from '@/lib/fetch';
 import { PlusIcon } from '@radix-ui/react-icons';
-import { Edit, Trash } from 'lucide-react';
+import { Edit, Loader, Trash } from 'lucide-react';
 import React, { useContext, useRef, useState } from 'react';
 
 const SpeechTraining = () => {
@@ -17,6 +18,8 @@ const SpeechTraining = () => {
     const voiceLabelRef = useRef(null);
     const [uploadedFiles, setUploadedFiles] = useState([]);
     const { utils } = useContext(GlobalContext);
+    const cleanupSignal = useRef(false);
+    const [buttonLoading, setButtonLoading] = useState(false);
     const handleFormSubmit = async (e) => {
         e.preventDefault();
         //validate form
@@ -24,9 +27,44 @@ const SpeechTraining = () => {
             utils.toast.error('Voice name is required');
             return;
         }
-        if(uploadedFiles.length === 0){
+        if (uploadedFiles.length === 0) {
             utils.toast.error('Please upload at least one voice sample');
             return;
+        }
+        //submit form
+        processingRef.current = true;
+        setButtonLoading(true);
+        const formData = new FormData();
+        formData.append('voiceLabel', voiceLabelRef.current.value);
+        uploadedFiles.map(file => {
+            formData.append('files', file);
+        });
+        try {
+            const response = await vgFetch('/xtts/train', {
+                method: 'POST',
+                body: formData,
+            }).catch(err => {
+                setButtonLoading(false);
+                console.error(err);
+                processingRef.current = false;
+                utils.toast.error('An error occurred. Please try again later [D-500]');
+            });
+            processingRef.current = false;
+            setButtonLoading(false);
+
+            if (response.status == 200) {
+                utils.toast.success(response.message)
+                setShowModal(false);
+                setUploadedFiles([]);
+                voiceLabelRef.current.value = '';
+                return;
+            }
+            utils.toast.error(response.message);
+        } catch (error) {
+            setButtonLoading(false);
+            processingRef.current = false;
+            console.error(error);
+            utils.toast.error('An error occurred. Please try again later');
         }
 
     };
@@ -86,8 +124,8 @@ const SpeechTraining = () => {
                 open={showModal}
                 onOpenChange={() => {
                     if (processingRef.current) return;
-                    if(voiceLabelRef.current.value !== '' || uploadedFiles.length > 0){
-                        if(!window.confirm('Are you sure you want to close this dialog? All unsaved data will be lost.')){
+                    if (voiceLabelRef.current.value !== '' || uploadedFiles.length > 0) {
+                        if (!window.confirm('Are you sure you want to close this dialog? All unsaved data will be lost.')) {
                             return;
                         }
                     }
@@ -114,15 +152,15 @@ const SpeechTraining = () => {
                                 Add Files <small>(MAX 10MB/file)</small>
                             </Label>
                             <ScrollArea className="max-h-[400px] overflow-y-auto">
-                                <FileUpload onChange={handleFileUpload} />
+                                <FileUpload cleanup={e => { cleanupSignal.current = false }} sigint={cleanupSignal} onChange={handleFileUpload} />
                             </ScrollArea>
                         </div>
                         <DialogFooter>
-                            <Button type="button" variant='ghost' onClick={() => setShowModal(false)}>
+                            <Button disabled={buttonLoading} type="button" variant='ghost' onClick={() => setShowModal(false)}>
                                 Cancel
                             </Button>
-                            <Button type='submit'>
-                                Save
+                            <Button disabled={buttonLoading} type='submit'>
+                                Save {buttonLoading && <Loader className='h-4 animate-spin w-4 ml-2' />}
                             </Button>
                         </DialogFooter>
                     </form>

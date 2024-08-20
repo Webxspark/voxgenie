@@ -314,6 +314,45 @@ def anaFlorence():
         data = fwav.read(1024)
   return Response(stream(), mimetype="audio/wav")
 
+@app.route("/genie/xtts/train", methods=['post'])
+def train():
+  functions = VoxGenie(sqliteDriver.connect(), session)
+  if functions.validateSession(session, request)['status'] != 200:
+    return(jsonify({
+      "status": 401,
+      "message": "Unauthorized! Please login to continue."
+    }))
+  if "voiceLabel" not in request.form and "files" not in request.files:
+    return(jsonify({
+      "status": 400,
+      "message": "Please provide a voice label and the training files."
+    }))
+    
+  voiceLabel = request.form['voiceLabel']
+  # get files from the request form (files is an array of files)
+  files = request.files.getlist("files")
+  # check if output directory exists
+  if not os.path.exists("./trained-voices/"):
+    os.makedirs("./trained-voices/")
+  # upload files to the output directory with random names
+  uploadedFiles = []
+  for file in files:
+    filename = str(random.randint(1000000000, 9999999999)) + ".wav"
+    file.save(os.path.join("./trained-voices/", filename))
+    uploadedFiles.append(filename)
+  # train the model
+  return jsonify(functions.Voice_add(voiceLabel, uploadedFiles))
+
+@app.route("/genie/xtts/voices", methods=['get'])
+def getVoices():
+  functions = VoxGenie(sqliteDriver.connect(), session)
+  if functions.validateSession(session, request)['status'] != 200:
+    return(jsonify({
+      "status": 401,
+      "message": "Unauthorized! Please login to continue."
+    }))
+  return jsonify(functions.Voice_get())   
+
 @app.route("/genie/outputs/<path:filename>", methods=['get'])
 def download(filename):
   # check if file exists in the output directory

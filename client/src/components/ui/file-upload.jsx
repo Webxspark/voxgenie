@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import React, { useContext, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { IconUpload } from "@tabler/icons-react";
 import { useDropzone } from "react-dropzone";
@@ -29,11 +29,20 @@ const secondaryVariant = {
 
 export const FileUpload = ({
   onChange,
-
+  sigint = false,
+  cleanup = e => { }
 }) => {
   const [files, setFiles] = useState([]);
   const fileInputRef = useRef(null);
   const { utils } = useContext(GlobalContext);
+
+  useEffect(() => {
+    if(sigint.current === true){
+      setFiles([]);
+      onChange && onChange([]);
+      cleanup();
+    }
+  }, [sigint.current])
 
   const handleFileChange = (newFiles) => {
     var insert = true;
@@ -128,7 +137,7 @@ export const FileUpload = ({
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            if (window.confirm("Remove selected file and upload another one?")) {
+                            if (window.confirm("Are you sure you want to remove this file from upload queue?")) {
                               setFiles((prevFiles) => prevFiles.filter((_, i) => i !== idx));
                               onChange && onChange(files.filter((_, i) => i !== idx));
                             }
