@@ -86,6 +86,11 @@ const SpeechTraining = () => {
                 open={showModal}
                 onOpenChange={() => {
                     if (processingRef.current) return;
+                    if(voiceLabelRef.current.value !== '' || uploadedFiles.length > 0){
+                        if(!window.confirm('Are you sure you want to close this dialog? All unsaved data will be lost.')){
+                            return;
+                        }
+                    }
                     setShowModal(false);
                 }}
             >
