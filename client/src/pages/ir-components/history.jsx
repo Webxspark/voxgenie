@@ -51,7 +51,7 @@ const History = ({ dashboard = false }) => {
                     return err.message || 'Something went wrong while deleting history. Please try again later. [D-500]';
                 }
             })
-            function __intCall(){
+            function __intCall() {
                 return new Promise((resolve, reject) => {
                     vgFetch("/app/history/remove", {
                         method: "DELETE",

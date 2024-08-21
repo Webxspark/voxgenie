@@ -37,7 +37,7 @@ export const FileUpload = ({
   const { utils } = useContext(GlobalContext);
 
   useEffect(() => {
-    if(sigint.current === true){
+    if (sigint.current === true) {
       setFiles([]);
       onChange && onChange([]);
       cleanup();
