@@ -128,7 +128,6 @@ const SpeechTraining = () => {
                             <div className='grid md:grid-cols-2 grid-cols-1 lg:grid-cols-4 gap-12'>
                                 {
                                     trainedVoicesList.map((voice, index) => {
-                                        // example output: ["1504884624.wav"]  ["2236179382.wav", "9537427951.wav", "6182911080.wav"]
                                         var voiceFiles = (JSON.parse(voice[2]))
                                         return (<Card>
                                             <CardHeader>
