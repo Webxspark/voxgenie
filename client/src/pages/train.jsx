@@ -49,7 +49,7 @@ const SpeechTraining = () => {
     }
     const handleFormSubmit = async (e) => {
         e.preventDefault();
-        //validate form
+        //validating form
         if (voiceLabelRef.current.value === '') {
             utils.toast.error('Voice name is required');
             return;
