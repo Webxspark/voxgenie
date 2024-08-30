@@ -217,7 +217,10 @@ const SpeechTraining = () => {
                 voice={editModalData}
                 open={editModalOpen}
                 onOpenChange={e => {
-                    setEditModalOpen(e)
+                    setEditModalOpen(e);
+                    if(!e){
+                        setEditModalData(false)
+                    }
                 }}
             />
         </div>
