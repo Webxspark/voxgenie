@@ -7,6 +7,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import DashAside from '@/components/dashboard/aside';
 import { AppContextProvider } from '@/contexts/dashboard';
 import AppTasks from '@/components/dashboard/tasks';
+import SystemStats from '@/pages/ir-components/system-stats';
 const AdminLayout = () => {
     const { user, setUser } = useContext(GlobalContext)
     const isMounted = useRef(false);
@@ -50,6 +51,7 @@ const AdminLayout = () => {
                         <DashAside>
                             <Outlet />
                             <AppTasks />
+                            <SystemStats />
                         </DashAside>
                     </>
                     || view == 'loading' && <div className='flex items-center justify-center h-[90dvh]'>
@@ -62,7 +64,7 @@ const AdminLayout = () => {
                     </div>
                 }
             </div>
-            
+
         </AppContextProvider>
     );
 };

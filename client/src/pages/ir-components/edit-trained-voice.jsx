@@ -1,24 +1,53 @@
+import WxpToolTip from '@/components/dashboard/tooltip';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { FileUpload } from '@/components/ui/file-upload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import React, { useEffect, useRef, useState } from 'react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AppContext } from '@/contexts/dashboard';
+import { cn } from '@/lib/utils';
+import { TrashIcon } from '@radix-ui/react-icons';
+import { DeleteIcon, DownloadIcon, LoaderIcon, PlayIcon, Save } from 'lucide-react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 
 const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [] }) => {
     const processingRef = useRef(false),
         cleanupSignal = useRef(false)
     const [uploadedFiles, setUploadedFiles] = useState([]),
-        [voiceLabel, setVoiceLabel] = useState("");
+        [voiceLabel, setVoiceLabel] = useState(""),
+        [buttonProcessing, setButtonProcessing] = useState(false);
+    const { audio_player } = useContext(AppContext)
     const handleFileUpload = e => {
-    
+
     }
     useEffect(() => {
         if (voice !== false) {
             setVoiceLabel(voice[3] || "")
-            setUploadedFiles(voice[2] || [])
+            setUploadedFiles(JSON.parse(voice[2]) || [])
         }
     }, [voice])
+    const handleFormSubmit = e => {
+        e.preventDefault()
+        setButtonProcessing(true)
+    }
+    const handlePlayClick = (file = "") => {
+        if (file == "") return;
+        audio_player.api.setTrack({
+            title: "Audio Preivew",
+            voice: voice[3] || "Trained Voice"
+        })
+        audio_player.api.setUrl(`/genie/tvo/${file}`);
+        audio_player.api.show();
+        audio_player.api.play();
+    }
+    const handleDeleteAction = file => {
+        if (processingRef.current) return
+        if (confirm("Are you sure you want to delete this file?")) {
+            
+        }
+    }
     return (
         <div>
             <Dialog
@@ -37,25 +66,74 @@ const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [] }) =
                             Manage or edit the trained voice
                         </DialogDescription>
                     </DialogHeader>
-                    <div>
-                        <Label>
-                            Voice Name
-                        </Label>
-                        <Input
-                            type='text'
-                            placeholder='Eg: John Doe'
-                            value={voiceLabel}
-                            onChange={e => setVoiceLabel(e.target.value)}
-                        />
-                    </div>
-                    <div>
-                        <Label>
-                            Add Files <small>(MAX 10MB/file)</small>
-                        </Label>
-                        <ScrollArea className="max-h-[400px] overflow-y-auto">
-                            <FileUpload cleanup={e => { cleanupSignal.current = false }} sigint={cleanupSignal} onChange={handleFileUpload} />
-                        </ScrollArea>
-                    </div>
+                    <form className='space-y-4' onSubmit={handleFormSubmit}>
+                        <div>
+                            <Label>
+                                Voice Name
+                            </Label>
+                            <Input
+                                type='text'
+                                placeholder='Eg: John Doe'
+                                value={voiceLabel}
+                                onChange={e => setVoiceLabel(e.target.value)}
+                            />
+                        </div>
+                        <div>
+                            <Tabs defaultValue='files' className='w-full'>
+                                <TabsList className="grid w-full grid-cols-2">
+                                    <TabsTrigger value='files'>Uploaded Files</TabsTrigger>
+                                    <TabsTrigger value='upload'>Add Files</TabsTrigger>
+                                </TabsList>
+                                <TabsContent value='files'>
+                                    <Label>
+                                        Trained Files
+                                    </Label>
+                                    <div>
+                                        {
+                                            uploadedFiles.map((file, index) => {
+                                                return (<>
+                                                    <div className='flex gap-x-1 transition-all duration-100 hover:bg-neutral-100 dark:hover:bg-neutral-900 cursor-pointer rounded-xl p-2'>
+                                                        <span>{index + 1}.</span>
+                                                        <div className="flex justify-between gap-x-3 w-full">
+                                                            <h1 className="text-base">{file}</h1>
+                                                            <div className='flex items-center gap-x-2'>
+                                                                <WxpToolTip title={"Play audio"} asChild sparkVariant={true} >
+                                                                    <Button onClick={e => handlePlayClick(file)} size="icon" className="rounded-full">
+                                                                        <PlayIcon className='h-4 w-4' />
+                                                                    </Button>
+                                                                </WxpToolTip>
+                                                                <WxpToolTip title={"Delete audio"} asChild sparkVariant={true} >
+                                                                    <Button onClick={e => handleDeleteAction(file)} size="icon" className="rounded-full">
+                                                                        <TrashIcon className='h-4 w-4' />
+                                                                    </Button>
+                                                                </WxpToolTip>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </>)
+                                            })
+                                        }
+                                    </div>
+                                </TabsContent>
+                                <TabsContent value='upload'>
+                                    <Label>
+                                        Add Files <small>(MAX 10MB/file)</small>
+                                    </Label>
+                                    <ScrollArea className="max-h-[400px] overflow-y-auto">
+                                        <FileUpload cleanup={e => { cleanupSignal.current = false }} sigint={cleanupSignal} onChange={handleFileUpload} />
+                                    </ScrollArea>
+                                    <div className='flex justify-end'>
+                                        <Button disabled={buttonProcessing}>
+                                            Save changes {
+                                                buttonProcessing === true && <LoaderIcon className='h-4 w-4 ml-1 animate-spin' />
+                                                || <Save className='h-4 w-4 ml-1' />
+                                            }
+                                        </Button>
+                                    </div>
+                                </TabsContent>
+                            </Tabs>
+                        </div>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>

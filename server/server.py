@@ -10,12 +10,17 @@ from flask_session import Session
 from flask_cors import CORS
 from methods.functions import *
 from TTS.api import TTS
-import multiprocessing
-from gunicorn.app.base import BaseApplication
+from flask_socketio import SocketIO, send, emit
 import torch
+import threading
+import psutil
+import GPUtil
+import time
+import eventlet
+import eventlet.wsgi
 
 app = Flask(__name__)
-CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True
 app.config['SESSION_FILE_DIR'] = './.flask_session/'
@@ -23,8 +28,9 @@ app.config["SESSION_COOKIE_SAMESITE"] = "None"
 app.config["SESSION_COOKIE_SECURE"] = True
 app.secret_key = "WXP_FS_voxGenie2024"
 app.config.update(SESSION_COOKIE_SAMESITE="None", SESSION_COOKIE_SECURE=True)
-
 Session(app)
+CORS(app)
+
 sqliteDriver = Sqlite3Driver("./db/app.voice.genie")
 tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2", gpu=True)
 @app.route("/genie", methods=['get', 'post'])
@@ -363,29 +369,79 @@ def download(filename):
     }))
   return send_from_directory("./output/", filename, as_attachment=True)
 
+@app.route("/genie/tvo/<path:filename>", methods = ['get'])
+def preview(filename):
+  if not os.path.exists("./trained-voices/" + filename):
+    return(jsonify({
+      "status": 404,
+      "message": "File not found!"
+    }))
+  return send_from_directory("./trained-voices/", filename, as_attachment=False)
 
-class StandaloneApplication(BaseApplication):
-    def __init__(self, app, options=None):
-        self.options = options or {}
-        self.application = app
-        super().__init__()
+@app.route("/genie/xtts/voice/remove", methods=['delete'])
+def removeVoice():
+  functions = VoxGenie(sqliteDriver.connect(), session)
+  voice = request.form['voice']
+  
 
-    def load_config(self):
-        config = {key: value for key, value in self.options.items()
-                  if key in self.cfg.settings and value is not None}
-        for key, value in config.items():
-            self.cfg.set(key.lower(), value)
+def get_system_usage():
+    # Get CPU usage
+    cpu_usage = psutil.cpu_percent(interval=1)
+    
+    # Get RAM usage
+    ram_usage = psutil.virtual_memory()
+    ram_total = ram_usage.total / (1024 ** 3)  # Convert bytes to GB
+    ram_used = ram_usage.used / (1024 ** 3)  # Convert bytes to GB
+    ram_percentage = ram_usage.percent
 
-    def load(self):
-        return self.application
+    # Get GPU usage
+    gpus = GPUtil.getGPUs()
+    gpu_info = []
+    for gpu in gpus:
+        gpu_info.append({
+            "GPU Name": gpu.name,
+            "GPU Load": gpu.load * 100,
+            "GPU Free Memory": gpu.memoryFree,
+            "GPU Used Memory": gpu.memoryUsed,
+            "GPU Total Memory": gpu.memoryTotal,
+            "GPU Temperature": gpu.temperature
+        })
 
-def run_gunicorn():
-    options = {
-        'bind': '0.0.0.0:8000',
-        'workers': 4,
+    return {
+        "cpu_usage": cpu_usage,
+        "ram_total": ram_total,
+        "ram_used": ram_used,
+        "ram_percentage": ram_percentage,
+        "gpu_info": gpu_info
     }
-    StandaloneApplication(app, options).run()
+
+def stream_system_usage():
+    while True:
+        usage_data = get_system_usage()
+        print("Streaming system usage...", usage_data)
+        socketio.emit('system_usage', usage_data)
+        time.sleep(3)
+
+
+
+@socketio.on('connect')
+def handle_connect():
+    print('-' * 25)
+    print(f"Client has connected: {request.sid}")
+    socketio.emit("connected", {"data": f"id: {request.sid} is connected"})
+    print('-' * 25)
+    # Start a thread to stream the data
+    threading.Thread(target=stream_system_usage).start()
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('-' * 25)
+    print("User disconnected")
+    socketio.emit("disconnect", f"User {request.sid} disconnected", broadcast=True)
+    print('-' * 25)
 
 
 if(__name__ == "__main__"):
-  app.run(debug=False)
+  # app.run(debug=False)
+  print("Starting server...")
+  socketio.run(app, debug=False)

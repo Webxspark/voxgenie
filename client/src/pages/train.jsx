@@ -105,7 +105,7 @@ const SpeechTraining = () => {
                     <div className='flex justify-between items-center'>
                         <div className='space-y-1'>
                             <CardTitle>
-                                Your Voices (0)
+                                Your Voices {(trainedVoicesList != false && typeof trainedVoicesList == 'object') && <>({trainedVoicesList.length})</>}
                             </CardTitle>
                             <CardDescription>
                                 You can train unlimited voices
@@ -170,6 +170,7 @@ const SpeechTraining = () => {
             <Dialog
                 open={showModal}
                 onOpenChange={() => {
+                    console.log(processingRef.current, voiceLabelRef.current.value, uploadedFiles.length);
                     if (processingRef.current) return;
                     if (voiceLabelRef.current.value !== '' || uploadedFiles.length > 0) {
                         if (!window.confirm('Are you sure you want to close this dialog? All unsaved data will be lost.')) {
