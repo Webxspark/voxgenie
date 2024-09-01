@@ -35,13 +35,6 @@ const DashAside = ({ children }) => {
                 <IconBrandTabler className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
             ),
         },
-        // {
-        //     label: "File Manager",
-        //     href: ROUTES.dashboard.fileManager,
-        //     icon: (
-        //         <IconServer className="text-neutral-700 dark:text-neutral-200 h-5 w-5 flex-shrink-0" />
-        //     ),
-        // },
         {
             label: "History",
             href: ROUTES.dashboard.history,

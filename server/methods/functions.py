@@ -1,6 +1,13 @@
 import json
 import os
+import threading
+import ctypes
 class VoxGenie:
+    
+    SYSTEM_USAGE = None
+    SYSTEM_USAGE_THREAD = None
+    SYSTEM_USAGE_PROCESS_STARTED = False
+
     def __init__(self, conn = None, session = None) -> None:
         if conn is None:
             raise ValueError("A SQLITE connection is required to initialize VoxGenie functions!")
@@ -145,3 +152,66 @@ class VoxGenie:
             "voices": voices
         }
     
+    # System usage functions
+    def get_system_usage(self) -> dict | None:
+        print(self.SYSTEM_USAGE)
+        return self.SYSTEM_USAGE
+    
+    def updateSysUsage(self):
+        import psutil
+        import GPUtil
+        import time
+        while True:
+            # Get CPU usage
+            cpu_usage = psutil.cpu_percent(interval=1)
+            
+            # Get RAM usage
+            ram_usage = psutil.virtual_memory()
+            ram_total = ram_usage.total / (1024 ** 3)  # Convert bytes to GB
+            ram_used = ram_usage.used / (1024 ** 3)  # Convert bytes to GB
+            ram_percentage = ram_usage.percent
+
+            # Get GPU usage
+            gpus = GPUtil.getGPUs()
+            gpu_info = []
+            for gpu in gpus:
+                gpu_info.append({
+                    "GPU Name": gpu.name,
+                    "GPU Load": gpu.load * 100,
+                    "GPU Free Memory": gpu.memoryFree,
+                    "GPU Used Memory": gpu.memoryUsed,
+                    "GPU Total Memory": gpu.memoryTotal,
+                    "GPU Temperature": gpu.temperature
+                })
+            self.SYSTEM_USAGE = {
+            "cpu_usage": cpu_usage,
+            "ram_total": ram_total,
+            "ram_used": ram_used,
+            "ram_percentage": ram_percentage,
+            "gpu_info": gpu_info
+            }
+            time.sleep(1)
+    def start_sys_usage_update(self):
+        print("Attempting to start system usage update thread...")
+        thread = threading.Thread(target=self.updateSysUsage, daemon=True)
+        thread.start()
+        print(f"System usage update thread started with ID: {thread.ident}")
+        self.SYSTEM_USAGE_THREAD = thread
+        self.SYSTEM_USAGE_PROCESS_STARTED = True
+    
+    def stop_sys_usage_update(self):
+        self.SYSTEM_USAGE = None
+        print("Attempting to stop system usage update thread...")
+        if not self.SYSTEM_USAGE_THREAD.is_alive():
+            return
+        exc = ctypes.py_object(SystemExit)
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(ctypes.c_long(self.SYSTEM_USAGE_THREAD.ident), exc)
+        if res == 0:
+            raise ValueError("Invalid thread ID")
+        elif res > 1:
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(self.SYSTEM_USAGE_THREAD.ident, None)
+            raise SystemError("PyThreadState_SetAsyncExc failed")
+        self.SYSTEM_USAGE_THREAD = None
+        self.SYSTEM_USAGE_PROCESS_STARTED = False
+        self.SYSTEM_USAGE = None
+        print("System usage update thread stopped!")

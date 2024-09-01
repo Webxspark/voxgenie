@@ -1,3 +1,4 @@
+print("\nStarting VoxGenie server...")
 import os
 import random
 import datetime
@@ -18,7 +19,6 @@ import GPUtil
 import time
 import eventlet
 import eventlet.wsgi
-
 app = Flask(__name__)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -32,7 +32,9 @@ Session(app)
 CORS(app)
 
 sqliteDriver = Sqlite3Driver("./db/app.voice.genie")
-tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2", gpu=True)
+#get device
+device = "cuda" if torch.cuda.is_available() else "cpu"
+tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 @app.route("/genie", methods=['get', 'post'])
 def index():
   return jsonify("Hello world!")
@@ -382,66 +384,71 @@ def preview(filename):
 def removeVoice():
   functions = VoxGenie(sqliteDriver.connect(), session)
   voice = request.form['voice']
-  
 
-def get_system_usage():
-    # Get CPU usage
-    cpu_usage = psutil.cpu_percent(interval=1)
-    
-    # Get RAM usage
-    ram_usage = psutil.virtual_memory()
-    ram_total = ram_usage.total / (1024 ** 3)  # Convert bytes to GB
-    ram_used = ram_usage.used / (1024 ** 3)  # Convert bytes to GB
-    ram_percentage = ram_usage.percent
+def sysUpdateBGTask():
+  functions = VoxGenie(sqliteDriver.connect(), session)
 
-    # Get GPU usage
-    gpus = GPUtil.getGPUs()
-    gpu_info = []
-    for gpu in gpus:
-        gpu_info.append({
-            "GPU Name": gpu.name,
-            "GPU Load": gpu.load * 100,
-            "GPU Free Memory": gpu.memoryFree,
-            "GPU Used Memory": gpu.memoryUsed,
-            "GPU Total Memory": gpu.memoryTotal,
-            "GPU Temperature": gpu.temperature
-        })
-
-    return {
-        "cpu_usage": cpu_usage,
-        "ram_total": ram_total,
-        "ram_used": ram_used,
-        "ram_percentage": ram_percentage,
-        "gpu_info": gpu_info
-    }
+connectionCount = 0
+bgProcessStarted = False
+_tmp = VoxGenie(sqliteDriver.connect(), session)
 
 def stream_system_usage():
+    global _tmp
+    global connectionCount
+    global bgProcessStarted
+    if bgProcessStarted == True: 
+      return
+    if(_tmp.SYSTEM_USAGE_PROCESS_STARTED == False):
+      _tmp.start_sys_usage_update()
+    whileRetries = 0
     while True:
-        usage_data = get_system_usage()
-        print("Streaming system usage...", usage_data)
-        socketio.emit('system_usage', usage_data)
-        time.sleep(3)
-
+        if(connectionCount == 0):
+          whileRetries += 1
+          print(f"No active connections! Retry count: {whileRetries}")
+          if whileRetries > 3:
+            bgProcessStarted = False
+            _tmp.stop_sys_usage_update()
+            break
+        else:
+          if whileRetries > 0:
+            print("Connection found! Resuming system usage stream.")
+            whileRetries = 0
+        bgProcessStarted = True
+        usage_data = _tmp.SYSTEM_USAGE
+        if(usage_data is not None):
+          socketio.emit('system_usage', usage_data)
+        socketio.sleep(2)
 
 
 @socketio.on('connect')
 def handle_connect():
+    global connectionCount
+    connectionCount += 1
     print('-' * 25)
     print(f"Client has connected: {request.sid}")
     socketio.emit("connected", {"data": f"id: {request.sid} is connected"})
     print('-' * 25)
     # Start a thread to stream the data
-    threading.Thread(target=stream_system_usage).start()
+    # threading.Thread(target=stream_system_usage).start()
+    if connectionCount >=2 :
+      print("Connection limit reached! Please close one of the connections.")
+      socketio.emit("connection_limit", {"data": "Connection limit reached! Please close one of the connections."})
+    else:
+      socketio.start_background_task(target=stream_system_usage)
 
 @socketio.on('disconnect')
 def handle_disconnect():
+    global connectionCount
+    connectionCount -= 1
     print('-' * 25)
     print("User disconnected")
-    socketio.emit("disconnect", f"User {request.sid} disconnected", broadcast=True)
+    socketio.emit("disconnect", f"User {request.sid} disconnected")
     print('-' * 25)
 
 
 if(__name__ == "__main__"):
   # app.run(debug=False)
-  print("Starting server...")
+  # clear console
+  os.system("clear")
+  print(f"Server running on port 5000\nENDPOINT: http://localhost:5000")
   socketio.run(app, debug=False)
