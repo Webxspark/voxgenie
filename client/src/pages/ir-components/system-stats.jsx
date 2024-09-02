@@ -56,7 +56,7 @@ const SystemStats = () => {
 
     return (
         <>
-            <div className='text-xs absolute bottom-0'>
+            <div className='text-xs absolute bottom-2'>
                 {
                     socketConnection === false ? (
                         <div className='text-red-500 p-4 border-2 border-red-600'>Connection to server lost!</div>
