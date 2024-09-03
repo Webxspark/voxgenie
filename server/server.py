@@ -429,13 +429,6 @@ def handle_connect():
     socketio.emit("connected", {"data": f"id: {request.sid} is connected"})
     print('-' * 25)
     # Start a thread to stream the data
-    # threading.Thread(target=stream_system_usage).start()
-    # if connectionCount >=5 :
-    #   print("Connection limit reached! Please close one of the connections.")
-    #   socketio.emit("connection_limit", {"data": "Connection limit reached! Please close one of the connections."})
-    #   # disconnect the user
-    #   socketio.disconnect(request.sid)
-    # else:
     socketio.start_background_task(target=stream_system_usage)
 
 @socketio.on('disconnect')
