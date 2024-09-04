@@ -443,7 +443,6 @@ def handle_disconnect():
 
 if(__name__ == "__main__"):
   # app.run(debug=False)
-  # clear console
   os.system("clear")
   print(f"Server running on port 5000\nENDPOINT: http://localhost:5000")
   socketio.run(app, debug=False)
