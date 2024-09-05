@@ -7,18 +7,21 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AppContext } from '@/contexts/dashboard';
+import { GlobalContext } from '@/contexts/global';
+import { vgFetch } from '@/lib/fetch';
 import { cn } from '@/lib/utils';
 import { TrashIcon } from '@radix-ui/react-icons';
 import { DeleteIcon, DownloadIcon, LoaderIcon, PlayIcon, Save } from 'lucide-react';
 import React, { useContext, useEffect, useRef, useState } from 'react';
 
-const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [] }) => {
+const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [], voiceUpdateTrigger = e => null }) => {
     const processingRef = useRef(false),
         cleanupSignal = useRef(false)
     const [uploadedFiles, setUploadedFiles] = useState([]),
         [voiceLabel, setVoiceLabel] = useState(""),
         [buttonProcessing, setButtonProcessing] = useState(false);
     const { audio_player } = useContext(AppContext)
+    const { utils } = useContext(GlobalContext);
     const handleFileUpload = e => {
 
     }
@@ -42,11 +45,48 @@ const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [] }) =
         audio_player.api.show();
         audio_player.api.play();
     }
-    const handleDeleteAction = file => {
+    const handleDeleteAction = (file = "") => {
         if (processingRef.current) return
+        if (file === "" || !file) return;
         if (confirm("Are you sure you want to delete this file?")) {
-            
+            var voiceID = voice[0];
+            //validate
+            if (voiceID === undefined || voiceID === "") {
+                utils.toast.error("Invalid voice ID");
+                return;
+            }
+            utils.toast.promise(sendDeleteRequest(voiceID, file), {
+                loading: "Deleting file...",
+                success: (res) => {
+                    if (res.status == 200) {
+                        var newFiles = uploadedFiles.filter(f => f !== file);
+                        setUploadedFiles(newFiles);
+                        voiceUpdateTrigger();
+                        return res.message || "File deleted successfully";
+                    }
+                },
+                error: (err) => {
+                    return err.message || "Failed to delete file :(";
+                }
+            })
         }
+    }
+    function sendDeleteRequest(voiceID, file) {
+        return new Promise((resolve, reject) => {
+            processingRef.current = true;
+            vgFetch('/xtts/voice/sf-remove', {
+                method: 'DELETE',
+                body: new URLSearchParams({
+                    voice: voiceID,
+                    file
+                })
+            }).then(resp => {
+                resolve(resp)
+            }).catch(err => reject(err))
+                .finally(() => {
+                    processingRef.current = false;
+                })
+        })
     }
     return (
         <div>

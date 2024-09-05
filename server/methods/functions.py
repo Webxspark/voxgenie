@@ -152,6 +152,43 @@ class VoxGenie:
             "voices": voices
         }
     
+    def Voice_sf_remove(self, id: any, file, request):
+        if self.validateSession(self.session, request)['status'] != 200:
+            return {
+                "status": 401,
+                "message": "Unauthorized! Please login to continue."
+            }
+        cursor = self.conn.cursor()
+        tag = self.session['tag']
+        cursor.execute("SELECT * FROM voices WHERE id = ? AND tag = ?", (id, tag))
+        voice = cursor.fetchone()
+        if voice:
+            files = json.loads(voice[2])
+            if file in files:
+                files.remove(file)
+                cursor.execute("UPDATE voices SET files = ? WHERE id = ? AND tag = ?", (json.dumps(files), id, tag))
+                self.conn.commit()
+                # remove file from disk ("trained-voices" directory)
+                try:
+                    os.remove("./trained-voices/" + file)
+                except Exception as e:
+                    print(e)
+
+                return {
+                    "status": 200,
+                    "message": "File removed successfully!"
+                }
+            else:
+                return {
+                    "status": 400,
+                    "message": "File not found!"
+                }
+        else:
+            return {
+                "status": 400,
+                "message": "Voice not found!"
+            }
+    
     # System usage functions
     def get_system_usage(self) -> dict | None:
         print(self.SYSTEM_USAGE)

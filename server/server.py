@@ -380,13 +380,12 @@ def preview(filename):
     }))
   return send_from_directory("./trained-voices/", filename, as_attachment=False)
 
-@app.route("/genie/xtts/voice/remove", methods=['delete'])
-def removeVoice():
+@app.route("/genie/xtts/voice/sf-remove", methods=['delete'])
+def removeVoiceSF():
   functions = VoxGenie(sqliteDriver.connect(), session)
   voice = request.form['voice']
-
-def sysUpdateBGTask():
-  functions = VoxGenie(sqliteDriver.connect(), session)
+  file = request.form['file']
+  return jsonify(functions.Voice_sf_remove(voice, file, request))
 
 connectionCount = 0
 bgProcessStarted = False

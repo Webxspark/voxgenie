@@ -34,6 +34,7 @@ const SpeechTraining = () => {
         }
     }, [])
     function loadVoicesList() {
+        setView('loading')
         vgFetch("/xtts/voices").then(response => {
             if (response.status == 200) {
                 setTrainedVoicesList(response.voices || [])
@@ -222,6 +223,9 @@ const SpeechTraining = () => {
                     if(!e){
                         setEditModalData(false)
                     }
+                }}
+                voiceUpdateTrigger={e => {
+                    loadVoicesList()
                 }}
             />
         </div>
