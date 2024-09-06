@@ -152,6 +152,30 @@ class VoxGenie:
             "voices": voices
         }
     
+    def Voice_edit(self, id: any, label: str, files: list, request):
+        if self.validateSession(self.session, request)['status'] != 200:
+            return {
+                "status": 401,
+                "message": "Unauthorized! Please login to continue."
+            }
+        cursor = self.conn.cursor()
+        tag = self.session['tag']
+        cursor.execute("SELECT * FROM voices WHERE id = ? AND tag = ?", (id, tag))
+        voice = cursor.fetchone()
+        if voice:
+            prev_files = json.loads(voice[2])
+            for file in files:
+                if file not in prev_files:
+                    prev_files.append(file)
+            cursor.execute("UPDATE voices SET files = ?, label = ? WHERE id = ? AND tag = ?", (json.dumps(prev_files), label, id, tag))
+            self.conn.commit()
+            return True
+        else:
+            return {
+                "status": 400,
+                "message": "Voice not found!"
+            }
+    
     def Voice_sf_remove(self, id: any, file, request):
         if self.validateSession(self.session, request)['status'] != 200:
             return {

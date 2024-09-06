@@ -19,11 +19,12 @@ const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [], voi
         cleanupSignal = useRef(false)
     const [uploadedFiles, setUploadedFiles] = useState([]),
         [voiceLabel, setVoiceLabel] = useState(""),
-        [buttonProcessing, setButtonProcessing] = useState(false);
+        [buttonProcessing, setButtonProcessing] = useState(false),
+        [newUploads, setNewUploads] = useState([]);
     const { audio_player } = useContext(AppContext)
     const { utils } = useContext(GlobalContext);
     const handleFileUpload = e => {
-
+        setNewUploads(e)
     }
     useEffect(() => {
         if (voice !== false) {
@@ -33,7 +34,43 @@ const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [], voi
     }, [voice])
     const handleFormSubmit = e => {
         e.preventDefault()
-        setButtonProcessing(true)
+        // validate
+        if (voiceLabel === "") {
+            utils.toast.error("Please enter a voice name");
+            return;
+        }
+        console.log(uploadedFiles, newUploads)
+        if (uploadedFiles.length === 0 && newUploads.length === 0) {
+            utils.toast.error("Please upload atleast 1 audio file");
+            return;
+        }
+        var formData = new FormData();
+        formData.append("voiceLabel", voiceLabel);
+        formData.append("voiceID", voice[0]);
+        newUploads.map(file => {
+            formData.append("files", file);
+        })
+        setButtonProcessing(true);
+        processingRef.current = true;
+        console.log(formData)
+        vgFetch("/xtts/voices/edit", {
+            method: "POST",
+            body: formData
+        }).then(resp => {
+            if(resp.status == 200){
+                utils.toast.success(resp.message || "Voice updated successfully");
+                voiceUpdateTrigger();
+                onOpenChange(false);
+            } else {
+                utils.toast.error(resp.message || "Failed to update voice");
+            }
+        }).catch(err => {
+            console.log(err)
+            utils.toast.error(err.message || "Failed to update voice");
+        }).finally(() => {
+            setButtonProcessing(false);
+            processingRef.current = false;
+        })
     }
     const handlePlayClick = (file = "") => {
         if (file == "") return;
@@ -130,7 +167,7 @@ const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [], voi
                                     </Label>
                                     <div>
                                         {
-                                            uploadedFiles.map((file, index) => {
+                                            uploadedFiles.length > 0 && uploadedFiles.map((file, index) => {
                                                 return (<>
                                                     <div className='flex gap-x-1 transition-all duration-100 hover:bg-neutral-100 dark:hover:bg-neutral-900 cursor-pointer rounded-xl p-2'>
                                                         <span>{index + 1}.</span>
@@ -138,12 +175,12 @@ const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [], voi
                                                             <h1 className="text-base">{file}</h1>
                                                             <div className='flex items-center gap-x-2'>
                                                                 <WxpToolTip title={"Play audio"} asChild sparkVariant={true} >
-                                                                    <Button onClick={e => handlePlayClick(file)} size="icon" className="rounded-full">
+                                                                    <Button type="button" onClick={e => handlePlayClick(file)} size="icon" className="rounded-full">
                                                                         <PlayIcon className='h-4 w-4' />
                                                                     </Button>
                                                                 </WxpToolTip>
                                                                 <WxpToolTip title={"Delete audio"} asChild sparkVariant={true} >
-                                                                    <Button onClick={e => handleDeleteAction(file)} size="icon" className="rounded-full">
+                                                                    <Button type="button" onClick={e => handleDeleteAction(file)} size="icon" className="rounded-full">
                                                                         <TrashIcon className='h-4 w-4' />
                                                                     </Button>
                                                                 </WxpToolTip>
@@ -152,6 +189,9 @@ const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [], voi
                                                     </div>
                                                 </>)
                                             })
+                                            || <div className='flex justify-center text-center items-center h-24 text-neutral-500 dark:text-neutral-400'>
+                                                No voice samples uploaded yet. Click on the "Add Files" tab to upload voice samples.
+                                            </div>
                                         }
                                     </div>
                                 </TabsContent>

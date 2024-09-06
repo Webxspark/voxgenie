@@ -1,4 +1,4 @@
-print("\nStarting VoxGenie server...")
+print("Starting VoxGenie server...")
 import os
 import random
 import datetime
@@ -351,6 +351,39 @@ def train():
   # train the model
   return jsonify(functions.Voice_add(voiceLabel, uploadedFiles))
 
+@app.route("/genie/xtts/voices/edit", methods=['post'])
+def editVoice():
+  functions = VoxGenie(sqliteDriver.connect(), session)
+  if "voiceLabel" not in request.form:
+    return(jsonify({
+      "status": 400,
+      "message": "Please provide a voice label."
+    }))
+  if "voiceID" not in request.form:
+    return(jsonify({
+      "status": 400,
+      "message": "Please provide a voice ID."
+    }))
+  voiceLabel = request.form['voiceLabel']
+  voiceID = request.form['voiceID']
+  files = request.files.getlist("files")
+  # upload files to the "trained-voices" directory with random names
+  uploadedFiles = []
+  for file in files:
+    filename = str(random.randint(1000000000, 9999999999)) + ".wav"
+    file.save(os.path.join("./trained-voices/", filename))
+    uploadedFiles.append(filename)
+  resp = functions.Voice_edit(voiceID, voiceLabel, uploadedFiles, request)
+  if(resp == True):
+    return jsonify({
+      "status": 200,
+      "message": "Voice updated successfully!"
+    })
+  # remove uploaded files
+  for file in uploadedFiles:
+    os.remove("./trained-voices/" + file)
+  return jsonify(resp)
+
 @app.route("/genie/xtts/voices", methods=['get'])
 def getVoices():
   functions = VoxGenie(sqliteDriver.connect(), session)
@@ -435,7 +468,7 @@ def handle_disconnect():
     global connectionCount
     connectionCount -= 1
     print('-' * 25)
-    print("User disconnected")
+    print(f"User disconnected ({request.sid})")
     socketio.emit("disconnect", f"User {request.sid} disconnected")
     print('-' * 25)
 
