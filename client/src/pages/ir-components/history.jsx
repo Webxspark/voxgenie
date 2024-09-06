@@ -125,14 +125,14 @@ const History = ({ dashboard = false }) => {
                                                 <div className="flex justify-between gap-x-3 w-full">
                                                     <div
                                                         onClick={e => {
-                                                            setOverViewData({ prompt: voice.prompt, voice: voice.speaker, audio: audioOutput })
+                                                            setOverViewData({ prompt: voice.prompt, voice: voice.speaker || voice.voice, audio: audioOutput })
                                                             setOverViewPopupVisible(true)
                                                         }}
                                                     >
                                                         <h1 className='text-base'>{truncatedPrompt}</h1>
                                                         <p>
                                                             <span className="text-sm text-gray-500">
-                                                                Voice: {voice.speaker || "-"}
+                                                                Voice: {voice.speaker || voice.voice || "Unknown"}
                                                             </span>
                                                         </p>
                                                     </div>

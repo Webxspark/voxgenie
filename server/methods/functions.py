@@ -133,6 +133,33 @@ class VoxGenie:
             "status": 200,
             "message": "Voice trained successfully! You can now use it to generate prompts."
         }
+    
+    def Voice_getAllVoiceFiles(self, id, request):
+        if self.validateSession(self.session, request)['status'] != 200:
+            return {
+                "status": 401,
+                "message": "Unauthorized! Please login to continue."
+            }
+        cursor = self.conn.cursor()
+        tag = self.session['tag']
+        cursor.execute("SELECT * FROM voices WHERE id = ? AND tag = ?", (id, tag))
+        voice = cursor.fetchone()
+        if voice:
+            files = json.loads(voice[2])
+            # append the path to the files ("trained-voices" directory)
+            for i in range(len(files)):
+                files[i] = "./trained-voices/" + files[i]
+            return {
+                "status": 200,
+                "files": files,
+                "voice": voice[3]
+            }
+        else:
+            return {
+                "status": 400,
+                "message": "Voice not found!"
+            }
+
     def Voice_remove(self, id: any, request):
         if self.validateSession(self.session, request)['status'] != 200:
             return {

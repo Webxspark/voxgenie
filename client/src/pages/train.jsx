@@ -161,7 +161,7 @@ const SpeechTraining = () => {
                         <Skeleton className={'h-28'} />
                         <Skeleton className={'h-28'} />
                     </div>
-                        || view == 'content' && (trainedVoicesList != false && typeof trainedVoicesList == 'object') && <>
+                        || view == 'content' && (trainedVoicesList != false && typeof trainedVoicesList == 'object' && trainedVoicesList.length > 0) && <>
                             <div className='grid md:grid-cols-2 grid-cols-1 lg:grid-cols-4 gap-12'>
                                 {
                                     trainedVoicesList.map((voice, index) => {
@@ -199,6 +199,11 @@ const SpeechTraining = () => {
                         || typeof trainedVoicesList == 'string' && <div className='flex items-center justify-center'>
                             <div className='overflow-hidden relative rounded-2xl p-10 text-base text-white w-full bg-gradient-to-br from-purple-700 to-violet-900'>
                                 {trainedVoicesList}
+                            </div>
+                        </div>
+                        || trainedVoicesList.length == 0 && <div className='flex items-center justify-center'>
+                            <div className='overflow-hidden relative rounded-2xl p-10 text-base text-white w-full bg-gradient-to-br from-purple-700 to-violet-900'>
+                                You have not trained any voice yet. Click on the "Add Voice" button to get started.
                             </div>
                         </div>
                     }

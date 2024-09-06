@@ -275,8 +275,47 @@ def voiceInference():
         "message": "There is no speaker with this name. Please provide a valid speaker name."
       }))
   if voice != False:
-    pass # to be implemented (check if voice id exists)
-
+    voiceFiles = functions.Voice_getAllVoiceFiles(voice, request)
+    if voiceFiles['status'] != 200:
+      return(jsonify(voiceFiles))
+    if len(voiceFiles['files']) == 0:
+      return(jsonify({
+        "status": 400,
+        "message": "No voice files found for the selected voice. Please upload voice files to continue."
+      }))
+    # check if output directory exists
+    if not os.path.exists("./output/"):
+      os.makedirs("./output/")
+    outputFileName = str(random.randint(1000000000, 9999999999)) + ".wav"
+    output = "./output/" + outputFileName
+    print("\n\nGenerating voice...")
+    try:
+      tts.tts_to_file(
+        text=prompt,
+        file_path=output,
+        speaker_wav=voiceFiles['files'],
+        language="en",
+        split_sentences=True
+      )
+      functions.History_add(prompt, outputFileName, speaker, voiceFiles["voice"], request)
+      torch.cuda.empty_cache()
+      return {
+        "status": 200,
+        "message": "Voice generation completed!",
+        "data": {
+          "prompt": prompt,
+          "speaker": speaker,
+          "voice": voiceFiles["voice"],
+          "output": outputFileName
+        }
+      }
+    except Exception as e: 
+        print(e)
+        return(jsonify({
+          "status": 400,
+          "message": "An error occurred while generating the voice!"
+        }))
+  
   if speaker != False:
     # check if output directory exists
     if not os.path.exists("./output/"):

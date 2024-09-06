@@ -165,7 +165,7 @@ const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [], voi
                                     <Label>
                                         Trained Files
                                     </Label>
-                                    <div>
+                                    <ScrollArea className="max-h-[400px] overflow-y-auto">
                                         {
                                             uploadedFiles.length > 0 && uploadedFiles.map((file, index) => {
                                                 return (<>
@@ -193,7 +193,7 @@ const EditTrainedVoiceModal = ({ open, onOpenChange = e => null, voice = [], voi
                                                 No voice samples uploaded yet. Click on the "Add Files" tab to upload voice samples.
                                             </div>
                                         }
-                                    </div>
+                                    </ScrollArea>
                                 </TabsContent>
                                 <TabsContent value='upload'>
                                     <Label>

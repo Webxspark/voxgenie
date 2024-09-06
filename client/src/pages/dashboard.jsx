@@ -8,11 +8,12 @@ import { AppContext } from '@/contexts/dashboard';
 import { GlobalContext } from '@/contexts/global';
 import { vgFetch } from '@/lib/fetch';
 import { cn } from '@/lib/utils';
-import { DownloadIcon, PlayIcon } from '@radix-ui/react-icons';
+import { DownloadIcon, ExclamationTriangleIcon, PlayIcon } from '@radix-ui/react-icons';
 import { Loader } from 'lucide-react';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import History from './ir-components/history';
+import WxpToolTip from '@/components/dashboard/tooltip';
 
 const DashboardLanding = () => {
     const { utils } = useContext(GlobalContext);
@@ -21,6 +22,34 @@ const DashboardLanding = () => {
     const [btnLoading, setBtnLoading] = useState(false);
     const [outputAudio, setOutputAudio] = useState('');
     const [voice, setVoice] = useState('');
+    const [trainedVoices, setTrainedVoices] = useState([]);
+    const isMounted = useRef(false);
+
+    useEffect(() => {
+        if (!isMounted.current) {
+            isMounted.current = true;
+            // fetch trained voices
+            vgFetch("/xtts/voices").then(resp => {
+                if (resp.status == 200) {
+                    console.log(resp.voices, typeof resp.voices);
+                    if (typeof resp.voices === 'object' && resp.voices.length > 0) {
+                        setTrainedVoices(resp.voices);
+                    } else {
+                        setTrainedVoices([]);
+                    }
+                } else {
+                    console.error(resp);
+                    setTrainedVoices(false);
+                    utils.toast.error(resp.message || 'Something went wrong while fetching trained voices. Please try again later. [D-500]');
+                }
+            }).catch(err => {
+                console.error(err);
+                setTrainedVoices(false);
+                utils.toast.error('Something went wrong while fetching trained voices. Please try again later. [D-500]');
+            })
+        }
+    }, [])
+
     const handleFormSubmit = (e) => {
         e.preventDefault();
         if (text.length < 1) {
@@ -115,7 +144,9 @@ const DashboardLanding = () => {
                             </Label>
                             <div className='w-full'>
                                 <Select onValueChange={e => setVoice(e)}>
-                                    <SelectTrigger>
+                                    <SelectTrigger
+                                        className={cn(typeof trainedVoices === 'object' && trainedVoices.length == 0 && 'animate-pulse')}
+                                    >
                                         <SelectValue placeholder="Select a voice" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -129,7 +160,21 @@ const DashboardLanding = () => {
                                             <SelectLabel>
                                                 Trained Voices
                                             </SelectLabel>
-                                            {/*  */}
+                                            {trainedVoices.map((voice, idx) => {
+                                                var trainedVoicesList = JSON.parse(voice[2]);
+                                                return <SelectItem value={`{"voice": "${voice[0]}"}`} disabled={trainedVoicesList.length == 0}>
+                                                    <div className="flex items-center">
+                                                        {voice[3]}
+                                                        {trainedVoicesList.length == 0 && <WxpToolTip
+                                                            asChild
+                                                            title={"No voices trained for this speaker"}
+                                                            sparkVariant
+                                                        >
+                                                            <ExclamationTriangleIcon className='text-red-700 h-4 w-4 ml-1' />
+                                                        </WxpToolTip>}
+                                                    </div>
+                                                </SelectItem>
+                                            })}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
