@@ -420,6 +420,16 @@ def removeVoiceSF():
   file = request.form['file']
   return jsonify(functions.Voice_sf_remove(voice, file, request))
 
+@app.route("/genie/xtts/voice/remove", methods=['delete'])
+def removeVoice():
+  functions = VoxGenie(sqliteDriver.connect(), session)
+  if "voice" not in request.form:
+    return(jsonify({
+      "status": 400,
+      "message": "Please provide a voice ID."
+    }))
+  voice = request.form['voice']
+  return jsonify(functions.Voice_remove(voice, request))
 connectionCount = 0
 bgProcessStarted = False
 _tmp = VoxGenie(sqliteDriver.connect(), session)

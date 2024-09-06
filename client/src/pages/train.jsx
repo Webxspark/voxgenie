@@ -85,6 +85,7 @@ const SpeechTraining = () => {
                 setShowModal(false);
                 setUploadedFiles([]);
                 voiceLabelRef.current.value = '';
+                loadVoicesList();
                 return;
             }
             utils.toast.error(response.message);
@@ -98,6 +99,41 @@ const SpeechTraining = () => {
     };
     const handleFileUpload = e => {
         setUploadedFiles(e);
+    }
+    const handleDeleteAction = (voice = []) => {
+        if (voice.length === 0) return;
+        if (!window.confirm('Are you sure you want to delete this voice?')) {
+            return;
+        }
+        var prompt = window.prompt('Type "DELETE" to confirm').toLowerCase();
+        if (prompt !== 'delete' || prompt === null) {
+            utils.toast.error('Confirmation failed. Please try again.');
+            return;
+        }
+        utils.toast.promise(deleteVoice(voice[0]), {
+            loading: 'Deleting voice...',
+            success: (resp) => {
+                loadVoicesList();
+                return (resp.message || 'Voice deleted successfully');
+            },
+            error: (err) => {
+                return (err.message || 'An error occurred while deleting the voice');
+            }
+        })
+    }
+    function deleteVoice(voice) {
+        return new Promise((resolve, reject) => {
+            vgFetch("/xtts/voice/remove", {
+                method: "DELETE",
+                body: new URLSearchParams({voice})
+            }).then(resp => {
+                if (resp.status == 200) {
+                    resolve(resp)
+                } else {
+                    reject(resp)
+                }
+            }).catch(err => reject(err))
+        })
     }
     return (
         <div>
@@ -148,7 +184,7 @@ const SpeechTraining = () => {
                                                             </Button>
                                                         </WxpToolTip>
                                                         <WxpToolTip title={"Delete Voice"} sparkVariant>
-                                                            <Button variant="ghost" size="icon">
+                                                            <Button onClick={e => handleDeleteAction(voice)} variant="ghost" size="icon">
                                                                 <Trash className='h-4 w-4' />
                                                             </Button>
                                                         </WxpToolTip>
@@ -220,7 +256,7 @@ const SpeechTraining = () => {
                 open={editModalOpen}
                 onOpenChange={e => {
                     setEditModalOpen(e);
-                    if(!e){
+                    if (!e) {
                         setEditModalData(false)
                     }
                 }}
