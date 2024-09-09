@@ -146,7 +146,6 @@ class VoxGenie:
         voice = cursor.fetchone()
         if voice:
             files = json.loads(voice[2])
-            # append the path to the files ("trained-voices" directory)
             for i in range(len(files)):
                 files[i] = "./trained-voices/" + files[i]
             return {
