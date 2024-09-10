@@ -167,7 +167,7 @@ class VoxGenie:
             }
         cursor = self.conn.cursor()
         tag = self.session['tag']
-        # get voice files
+        # get voice files and remove them from disk
         cursor.execute("SELECT * FROM voices WHERE id = ? AND tag = ?", (id, tag))
         voice = cursor.fetchone()
         if voice:
