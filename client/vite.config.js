@@ -10,7 +10,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/genie': 'http://localhost:5000',
+      '/genie': 'http://localhost:8080',
     },
     port: 3000
   },

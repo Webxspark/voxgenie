@@ -525,5 +525,5 @@ def handle_disconnect():
 if(__name__ == "__main__"):
   # app.run(debug=False) # streak 
   os.system("clear")
-  print(f"Server running on port 5000\nENDPOINT: http://localhost:5000")
-  socketio.run(app, debug=False)
+  print(f"Server running on port 8080\nENDPOINT: http://localhost:8080")
+  socketio.run(app, debug=False, port=8080)
